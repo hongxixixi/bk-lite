@@ -13,12 +13,15 @@ import {
 import {
   badgeRect,
   CARD_BADGE,
+  CARD_CHROME,
   CARD_GLASS,
+  CARD_PAINT,
   CARD_TONE,
   ellipsizeText,
   paintApplication3DCard,
   paintApplication3DCardSide,
 } from '../application3DCardStyle';
+import { CARD_TEXTURE_WIDTH } from '../application3DVisual';
 
 describe('application3D layout', () => {
   it('uses a continuous aspect-aware wall', () => {
@@ -282,32 +285,50 @@ describe('application3D layout', () => {
     expect(measure(clipped)).toBeLessThanOrEqual(80);
   });
 
-  it('ranks status edges by width, opacity and glow instead of hue alone', () => {
-    const edgeAlpha = (tone: keyof typeof CARD_TONE) => {
-      const match = /,\s*([0-9.]+)\)$/.exec(CARD_TONE[tone].edge);
-      return Number(match?.[1] ?? 0);
+  it('locks 图一 glass tokens: hairline, faint glow, and designer hexes', () => {
+    const alphaOf = (value: string) => Number(/,\s*([0-9.]+)\)$/.exec(value)?.[1] ?? 0);
+    const rgbOf = (hex: string) => {
+      const n = parseInt(hex.replace('#', ''), 16);
+      return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
     };
-    expect(CARD_TONE.critical.edgeWidth).toBeGreaterThan(CARD_TONE.error.edgeWidth);
-    expect(CARD_TONE.error.edgeWidth).toBeGreaterThan(CARD_TONE.warning.edgeWidth);
-    expect(CARD_TONE.warning.edgeWidth).toBeGreaterThan(CARD_TONE.info.edgeWidth);
-    expect(CARD_TONE.info.edgeWidth).toBeGreaterThan(CARD_TONE.unknown.edgeWidth);
-    expect(CARD_TONE.unknown.edgeWidth).toBeGreaterThan(CARD_TONE.normal.edgeWidth);
-    expect(edgeAlpha('critical')).toBeGreaterThan(edgeAlpha('warning'));
-    expect(edgeAlpha('warning')).toBeGreaterThan(edgeAlpha('unknown'));
-    expect(edgeAlpha('unknown')).toBeGreaterThan(edgeAlpha('normal'));
-    expect(CARD_TONE.normal.glow.width).toBe(0);
-    expect(CARD_TONE.unknown.glow.width).toBe(0);
-    expect(CARD_TONE.info.glow.width).toBe(0);
-    expect(CARD_TONE.warning.glow.width).toBeGreaterThan(0);
+
+    expect(CARD_PAINT.glass).toBe('#061C2D');
+    expect(CARD_PAINT.glassAlpha).toBe(0.72);
+    expect(CARD_PAINT.normalBorder).toBe('#2F6E7F');
+    expect(CARD_PAINT.normalPill).toBe('#51897F');
+    expect(CARD_PAINT.warning).toBe('#C77742');
+    expect(CARD_GLASS.body).toContain(rgbOf(CARD_PAINT.glass));
+    expect(CARD_GLASS.body).toContain('0.72');
+    expect((CARD_GLASS.radius / CARD_TEXTURE_WIDTH) * 160).toBeCloseTo(4, 0);
+
+    expect(CARD_TONE.normal.edgeWidth).toBeCloseTo(3.2, 5);
+    expect(CARD_TONE.critical.edgeWidth).toBe(CARD_TONE.normal.edgeWidth);
+    expect(CARD_TONE.error.edgeWidth).toBe(CARD_TONE.normal.edgeWidth);
+    expect(CARD_TONE.warning.edgeWidth).toBe(CARD_TONE.normal.edgeWidth);
+
+    expect(CARD_TONE.normal.edge).toContain(rgbOf(CARD_PAINT.normalBorder));
+    expect(CARD_TONE.normal.glow.color).toContain(rgbOf(CARD_PAINT.normalBorder));
+    expect(CARD_TONE.normal.statusText).toContain(rgbOf(CARD_PAINT.normalPill));
+    expect(CARD_TONE.normal.statusText).not.toContain('60, 188, 176');
+    expect(CARD_TONE.warning.edge).toContain(rgbOf(CARD_PAINT.warning));
+    expect(CARD_TONE.warning.glow.color).toContain(rgbOf(CARD_PAINT.warning));
+    expect(CARD_TONE.warning.statusText).toContain(rgbOf(CARD_PAINT.warning));
+    expect(CARD_TONE.warning.badgeFill).toContain(rgbOf(CARD_PAINT.warning));
+    expect(CARD_TONE.critical.edge).toContain(rgbOf(CARD_PAINT.critical));
+    expect(CARD_TONE.error.edge).toContain(rgbOf(CARD_PAINT.critical));
+
+    expect(CARD_TONE.normal.glow.width).toBeGreaterThan(0);
+    expect(CARD_TONE.unknown.glow.width).toBeGreaterThan(0);
     expect(CARD_TONE.critical.glow.width).toBeGreaterThan(CARD_TONE.warning.glow.width);
-    expect(CARD_TONE.critical.glow.width).toBeLessThanOrEqual(28);
-    expect(CARD_TONE.warning.glow.width).toBeLessThanOrEqual(16);
-    expect(CARD_TONE.unknown.edge).toContain('118, 126, 136');
-    expect(CARD_TONE.normal.edge).toContain('206, 220, 232');
+    expect(CARD_TONE.critical.glow.width).toBeLessThanOrEqual(12);
+    expect(CARD_TONE.warning.glow.width).toBeLessThanOrEqual(10);
+    expect(alphaOf(CARD_TONE.critical.glow.color)).toBeLessThan(alphaOf(CARD_TONE.critical.edge));
+    expect(alphaOf(CARD_TONE.error.edge)).toBeLessThan(alphaOf(CARD_TONE.critical.edge));
+    expect(alphaOf(CARD_TONE.error.glow.color)).toBeLessThan(alphaOf(CARD_TONE.critical.glow.color));
     expect(CARD_BADGE.height).toBeGreaterThanOrEqual(44);
-    expect(CARD_GLASS.bodyRim).toContain('0.28');
     expect(CARD_GLASS.frostAlpha).toBeLessThan(0.07);
     expect(CARD_GLASS.frostAlpha).toBeGreaterThan(0.02);
+    expect(CARD_CHROME.iconStroke).toContain('255, 255, 255');
   });
 
   it('paints a rectangular unknown badge as -- and omits front chrome on the back', () => {
@@ -319,6 +340,7 @@ describe('application3D layout', () => {
       restore: () => undefined,
       beginPath: () => undefined,
       moveTo: () => undefined,
+      lineTo: () => undefined,
       arcTo: () => undefined,
       closePath: () => undefined,
       clip: () => undefined,
@@ -357,7 +379,7 @@ describe('application3D layout', () => {
     expect(fillTexts).toEqual([]);
   });
 
-  it('paints no outer glow for normal and unknown status edges', () => {
+  it('paints a faint outer glow on 图一 glass cards, not a critical bloom', () => {
     const shadows: number[] = [];
     const makeCtx = () =>
       ({
@@ -367,6 +389,7 @@ describe('application3D layout', () => {
         restore: () => undefined,
         beginPath: () => undefined,
         moveTo: () => undefined,
+        lineTo: () => undefined,
         arcTo: () => undefined,
         closePath: () => undefined,
         clip: () => undefined,
@@ -406,7 +429,8 @@ describe('application3D layout', () => {
     });
     paintApplication3DCard(makeCtx(), unknown, 'code-quality', 'front');
     paintApplication3DCard(makeCtx(), normal, 'ops-portal', 'front');
-    expect(shadows).toEqual([]);
+    expect(shadows).toContain(CARD_TONE.unknown.glow.width);
+    expect(shadows).toContain(CARD_TONE.normal.glow.width);
 
     const critical = resolveApplication3DCardVisual({
       name: '计费服务',
@@ -421,6 +445,54 @@ describe('application3D layout', () => {
     expect(shadows).toContain(CARD_TONE.critical.glow.width);
   });
 
+  it('paints 图一 four-piece chrome without a status dot', () => {
+    const fillTexts: string[] = [];
+    const lineToCalls: number[] = [];
+    let arcCalls = 0;
+    const ctx = {
+      canvas: { width: 512, height: 640 },
+      clearRect: () => undefined,
+      save: () => undefined,
+      restore: () => undefined,
+      beginPath: () => undefined,
+      moveTo: () => undefined,
+      lineTo: () => {
+        lineToCalls.push(1);
+      },
+      arcTo: () => undefined,
+      closePath: () => undefined,
+      clip: () => undefined,
+      fill: () => undefined,
+      stroke: () => undefined,
+      fillRect: () => undefined,
+      fillText: (text: string) => {
+        fillTexts.push(text);
+      },
+      measureText: (text: string) => ({ width: text.length * 18 }),
+      arc: () => {
+        arcCalls += 1;
+      },
+      createRadialGradient: () => ({ addColorStop: () => undefined }),
+      createLinearGradient: () => ({ addColorStop: () => undefined }),
+    } as unknown as CanvasRenderingContext2D;
+
+    const visual = resolveApplication3DCardVisual({
+      name: '本地演示-运营门户',
+      health: {
+        state: 'alarming',
+        reason: 'active_alarm',
+        activeAlarmCount: 2,
+        highestSeverity: { id: 'critical', label: '严重', color: 'critical' },
+      },
+    });
+    paintApplication3DCard(ctx, visual, 'ops-portal', 'front');
+    expect(fillTexts).toContain('运营门户');
+    expect(fillTexts).toContain('严重告警');
+    expect(fillTexts).toContain('2');
+    expect(lineToCalls.length).toBe(9);
+    expect(arcCalls).toBe(0);
+  });
+
   it('paints no_data critical and info as alarming visuals, not 状态未知', () => {
     const fillTexts: string[] = [];
     const ctx = {
@@ -430,6 +502,7 @@ describe('application3D layout', () => {
       restore: () => undefined,
       beginPath: () => undefined,
       moveTo: () => undefined,
+      lineTo: () => undefined,
       arcTo: () => undefined,
       closePath: () => undefined,
       clip: () => undefined,

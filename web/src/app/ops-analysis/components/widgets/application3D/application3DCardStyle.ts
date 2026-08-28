@@ -1,24 +1,50 @@
 import type { Application3DCardTone, Application3DCardVisual } from './application3DLayout';
 
 /**
- * Dark frosted glass for wall cards. Canvas cannot use CSS backdrop-filter,
+ * Dark frosted glass for wall cards (图一). Canvas cannot use CSS backdrop-filter,
  * so frost, rim light and translucency are painted. Faces use MeshBasicMaterial
- * so the painted glass is the on-screen truth; Physical lighting created a
- * metallic top-edge highlight at wall scale. Status is an edge accent, not a fill.
+ * so the painted glass is the on-screen truth. Status is a hairline + pill, not a fill.
  */
 export const CARD_THICKNESS = 0.2;
 
 export type Application3DCardFace = 'front' | 'back';
 
+/** Designer-locked 图一 paint. Do not invent replacements. */
+export const CARD_PAINT = {
+  glass: '#061C2D',
+  glassAlpha: 0.72,
+  normalBorder: '#2F6E7F',
+  normalPill: '#51897F',
+  warning: '#C77742',
+  /** Existing wall-card red; error uses the same hue at weaker alpha. */
+  critical: '#E05650',
+} as const;
+
+const hexRgb = (hex: string): string => {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+};
+
+export const rgbaFromHex = (hex: string, alpha: number): string =>
+  `rgba(${hexRgb(hex)}, ${alpha})`;
+
+/**
+ * 1px hairline on a typical ~160px projected 512-wide card → 3.2 texture px.
+ * ~4px on-screen corners → radius 13 (13 / 512 * 160 ≈ 4.1).
+ */
+const HAIRLINE = 3.2;
+
+const glassFill = (alpha: number) => rgbaFromHex(CARD_PAINT.glass, alpha);
+
 export const CARD_GLASS = {
-  radius: 32,
-  inset: 4,
-  bodyCenter: 'rgba(26, 36, 52, 0.62)',
-  body: 'rgba(30, 42, 60, 0.48)',
-  bodyRim: 'rgba(58, 78, 104, 0.28)',
-  unknownBodyCenter: 'rgba(26, 30, 38, 0.64)',
-  unknownBody: 'rgba(30, 34, 42, 0.50)',
-  unknownBodyRim: 'rgba(54, 62, 76, 0.30)',
+  radius: 13,
+  inset: 10,
+  bodyCenter: glassFill(0.78),
+  body: glassFill(CARD_PAINT.glassAlpha),
+  bodyRim: glassFill(0.64),
+  unknownBodyCenter: glassFill(0.78),
+  unknownBody: glassFill(CARD_PAINT.glassAlpha),
+  unknownBodyRim: glassFill(0.64),
   innerShadow: 'rgba(0, 0, 0, 0.08)',
   title: 'rgba(248, 250, 252, 0.98)',
   titleUnknown: 'rgba(232, 236, 242, 0.96)',
@@ -37,56 +63,68 @@ export const CARD_BADGE = {
   inset: 20,
 } as const;
 
+export const CARD_CHROME = {
+  iconInset: 28,
+  iconSize: 56,
+  iconStroke: 'rgba(255, 255, 255, 0.94)',
+  iconLineWidth: 2.4,
+  titleY: 0.46,
+  pillHeight: 44,
+  pillPadX: 22,
+  pillBottom: 36,
+  pillFill: glassFill(0.4),
+} as const;
+
 export const CARD_TONE = {
   normal: {
-    edge: 'rgba(206, 220, 232, 0.16)',
-    edgeWidth: 2.8,
-    glow: { color: 'rgba(0, 0, 0, 0)', width: 0 },
+    edge: rgbaFromHex(CARD_PAINT.normalBorder, 0.92),
+    edgeWidth: HAIRLINE,
+    glow: { color: rgbaFromHex(CARD_PAINT.normalBorder, 0.18), width: 6 },
     innerGlow: 'rgba(0, 0, 0, 0)',
     dot: '#3cbcb0',
-    statusText: 'rgba(198, 222, 218, 0.96)',
-    badgeFill: 'rgba(176, 48, 44, 0.96)',
+    statusText: rgbaFromHex(CARD_PAINT.normalPill, 0.96),
+    badgeFill: rgbaFromHex(CARD_PAINT.critical, 0.96),
   },
   critical: {
-    edge: 'rgba(246, 86, 76, 1)',
-    edgeWidth: 5.8,
-    glow: { color: 'rgba(224, 44, 36, 0.38)', width: 22 },
-    innerGlow: 'rgba(255, 118, 108, 0.26)',
+    edge: rgbaFromHex(CARD_PAINT.critical, 0.92),
+    edgeWidth: HAIRLINE,
+    glow: { color: rgbaFromHex(CARD_PAINT.critical, 0.58), width: 10 },
+    innerGlow: 'rgba(0, 0, 0, 0)',
     dot: '#e05650',
-    statusText: 'rgba(240, 198, 194, 0.96)',
-    badgeFill: 'rgba(188, 48, 44, 0.96)',
+    statusText: rgbaFromHex(CARD_PAINT.critical, 0.96),
+    badgeFill: rgbaFromHex(CARD_PAINT.critical, 0.96),
   },
   warning: {
-    edge: 'rgba(236, 168, 74, 0.90)',
-    edgeWidth: 4.2,
-    glow: { color: 'rgba(210, 132, 48, 0.20)', width: 14 },
+    edge: rgbaFromHex(CARD_PAINT.warning, 0.92),
+    edgeWidth: HAIRLINE,
+    glow: { color: rgbaFromHex(CARD_PAINT.warning, 0.38), width: 8 },
     innerGlow: 'rgba(0, 0, 0, 0)',
     dot: '#d9a05c',
-    statusText: 'rgba(230, 208, 176, 0.95)',
-    badgeFill: 'rgba(196, 126, 40, 0.96)',
+    statusText: rgbaFromHex(CARD_PAINT.warning, 0.96),
+    badgeFill: rgbaFromHex(CARD_PAINT.warning, 0.96),
   },
   error: {
-    edge: 'rgba(232, 124, 52, 0.96)',
-    edgeWidth: 5.0,
-    glow: { color: 'rgba(217, 112, 7, 0.28)', width: 18 },
-    innerGlow: 'rgba(255, 160, 96, 0.18)',
+    edge: rgbaFromHex(CARD_PAINT.critical, 0.64),
+    edgeWidth: HAIRLINE,
+    glow: { color: rgbaFromHex(CARD_PAINT.critical, 0.36), width: 9 },
+    innerGlow: 'rgba(0, 0, 0, 0)',
     dot: '#d97007',
-    statusText: 'rgba(240, 208, 176, 0.96)',
-    badgeFill: 'rgba(184, 96, 24, 0.96)',
+    statusText: rgbaFromHex(CARD_PAINT.critical, 0.78),
+    badgeFill: rgbaFromHex(CARD_PAINT.critical, 0.72),
   },
   info: {
     edge: 'rgba(96, 165, 250, 0.62)',
-    edgeWidth: 3.4,
-    glow: { color: 'rgba(0, 0, 0, 0)', width: 0 },
+    edgeWidth: HAIRLINE,
+    glow: { color: 'rgba(96, 165, 250, 0.16)', width: 7 },
     innerGlow: 'rgba(0, 0, 0, 0)',
     dot: '#60a5fa',
     statusText: 'rgba(186, 214, 242, 0.94)',
     badgeFill: 'rgba(59, 112, 168, 0.96)',
   },
   unknown: {
-    edge: 'rgba(118, 126, 136, 0.52)',
-    edgeWidth: 3.2,
-    glow: { color: 'rgba(0, 0, 0, 0)', width: 0 },
+    edge: rgbaFromHex(CARD_PAINT.normalBorder, 0.48),
+    edgeWidth: HAIRLINE,
+    glow: { color: rgbaFromHex(CARD_PAINT.normalBorder, 0.12), width: 6 },
     innerGlow: 'rgba(0, 0, 0, 0)',
     dot: '#8b97a8',
     statusText: 'rgba(188, 196, 206, 0.92)',
@@ -213,7 +251,7 @@ const paintGlassEdge = (
     ctx.shadowBlur = tokens.glow.width;
     roundRectPath(ctx, inset, inset, w - inset * 2, h - inset * 2, radius);
     ctx.strokeStyle = tokens.glow.color;
-    ctx.lineWidth = tokens.edgeWidth + 1.5;
+    ctx.lineWidth = tokens.edgeWidth;
     ctx.stroke();
     ctx.restore();
   }
@@ -270,7 +308,7 @@ const paintGlassBody = (
     body.addColorStop(1, CARD_GLASS.bodyRim);
   }
 
-  roundRectPath(ctx, 0, 0, w, h, 10);
+  roundRectPath(ctx, 0, 0, w, h, radius);
   ctx.fillStyle = body;
   ctx.fill();
 
@@ -292,6 +330,74 @@ const paintGlassBody = (
   paintGlassEdge(ctx, w, h, tone);
 };
 
+const paintWireframeCube = (
+  ctx: CanvasRenderingContext2D,
+  originX: number,
+  originY: number,
+  size: number,
+) => {
+  const ox = size * 0.48;
+  const oy = size * 0.27;
+  const depth = size * 0.62;
+  const top = originY;
+  const midY = originY + oy;
+  const frontTop = originY + oy * 2;
+  const frontBot = originY + oy * 2 + depth;
+  const leftX = originX;
+  const midX = originX + ox;
+  const rightX = originX + ox * 2;
+
+  const edges: Array<[[number, number], [number, number]]> = [
+    [[midX, top], [rightX, midY]],
+    [[rightX, midY], [midX, frontTop]],
+    [[midX, frontTop], [leftX, midY]],
+    [[leftX, midY], [midX, top]],
+    [[leftX, midY], [leftX, midY + depth]],
+    [[midX, frontTop], [midX, frontBot]],
+    [[rightX, midY], [rightX, midY + depth]],
+    [[leftX, midY + depth], [midX, frontBot]],
+    [[midX, frontBot], [rightX, midY + depth]],
+  ];
+
+  ctx.save();
+  ctx.strokeStyle = CARD_CHROME.iconStroke;
+  ctx.lineWidth = CARD_CHROME.iconLineWidth;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  edges.forEach(([from, to]) => {
+    ctx.beginPath();
+    ctx.moveTo(from[0], from[1]);
+    ctx.lineTo(to[0], to[1]);
+    ctx.stroke();
+  });
+  ctx.restore();
+};
+
+const paintStatusPill = (
+  ctx: CanvasRenderingContext2D,
+  visual: Application3DCardVisual,
+  tokens: (typeof CARD_TONE)[Application3DCardTone],
+) => {
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  ctx.font = `500 ${CARD_GLASS.statusSize}px ${CARD_GLASS.fontFamily}`;
+  const textW = ctx.measureText(visual.statusLabel).width;
+  const height = CARD_CHROME.pillHeight;
+  const width = Math.max(textW + CARD_CHROME.pillPadX * 2, height * 2);
+  const x = (w - width) / 2;
+  const y = h - CARD_GLASS.inset - CARD_CHROME.pillBottom - height;
+  roundRectPath(ctx, x, y, width, height, height / 2);
+  ctx.fillStyle = CARD_CHROME.pillFill;
+  ctx.fill();
+  ctx.strokeStyle = tokens.edge;
+  ctx.lineWidth = Math.max(tokens.edgeWidth * 0.7, 1.6);
+  ctx.stroke();
+  ctx.fillStyle = tokens.statusText;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(visual.statusLabel, w / 2, y + height / 2 + 1);
+};
+
 const paintFrontChrome = (
   ctx: CanvasRenderingContext2D,
   visual: Application3DCardVisual,
@@ -300,6 +406,8 @@ const paintFrontChrome = (
   const h = ctx.canvas.height;
   const tone = visual.cardTone;
   const tokens = CARD_TONE[tone];
+
+  paintWireframeCube(ctx, CARD_CHROME.iconInset, CARD_CHROME.iconInset, CARD_CHROME.iconSize);
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -310,23 +418,10 @@ const paintFrontChrome = (
   ctx.fillRect(0, h * 0.28, w, h * 0.52);
   ctx.fillStyle = tone === 'unknown' ? CARD_GLASS.titleUnknown : CARD_GLASS.title;
   ctx.font = `600 ${CARD_GLASS.titleSize}px ${CARD_GLASS.fontFamily}`;
-  const title = ellipsizeText(visual.title, w - 88, (value) => ctx.measureText(value).width);
-  ctx.fillText(title, w / 2, h * 0.46);
+  const title = ellipsizeText(visual.title, w - 96, (value) => ctx.measureText(value).width);
+  ctx.fillText(title, w / 2, h * CARD_CHROME.titleY);
 
-  ctx.font = `400 ${CARD_GLASS.statusSize}px ${CARD_GLASS.fontFamily}`;
-  const statusY = h * 0.68;
-  const labelWidth = ctx.measureText(visual.statusLabel).width;
-  const dotR = 6.5;
-  const gap = 8;
-  const total = dotR * 2 + gap + labelWidth;
-  const startX = w / 2 - total / 2;
-  ctx.fillStyle = tokens.dot;
-  ctx.beginPath();
-  ctx.arc(startX + dotR, statusY, dotR, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = tokens.statusText;
-  ctx.textAlign = 'left';
-  ctx.fillText(visual.statusLabel, startX + dotR * 2 + gap, statusY);
+  paintStatusPill(ctx, visual, tokens);
 
   if (!visual.showBadge) return;
   const rect = badgeRect(visual.badgeText, w, h);
@@ -382,7 +477,7 @@ const paintBackChrome = (ctx: CanvasRenderingContext2D) => {
     inset,
     w - inset * 2,
     h - inset * 2,
-    Math.max(CARD_GLASS.radius - 10, 8),
+    Math.max(CARD_GLASS.radius - 4, 8),
   );
   ctx.fillStyle = 'rgba(22, 30, 42, 0.16)';
   ctx.fill();
