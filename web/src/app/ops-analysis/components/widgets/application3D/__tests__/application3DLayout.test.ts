@@ -17,9 +17,11 @@ import {
   CARD_GLASS,
   CARD_PAINT,
   CARD_TONE,
+  HEALTHY_WALL_PILL,
   ellipsizeText,
   paintApplication3DCard,
   paintApplication3DCardSide,
+  wallCardStatusLabel,
 } from '../application3DCardStyle';
 import { CARD_TEXTURE_WIDTH } from '../application3DVisual';
 
@@ -326,8 +328,8 @@ describe('application3D layout', () => {
     expect(alphaOf(CARD_TONE.error.edge)).toBeLessThan(alphaOf(CARD_TONE.critical.edge));
     expect(alphaOf(CARD_TONE.error.glow.color)).toBeLessThan(alphaOf(CARD_TONE.critical.glow.color));
     expect(CARD_BADGE.height).toBeGreaterThanOrEqual(44);
-    expect(CARD_GLASS.frostAlpha).toBeLessThan(0.07);
-    expect(CARD_GLASS.frostAlpha).toBeGreaterThan(0.02);
+    expect(CARD_GLASS.frostAlpha).toBeLessThan(0.04);
+    expect(CARD_GLASS.frostAlpha).toBeGreaterThan(0.01);
     expect(CARD_CHROME.iconStroke).toContain('255, 255, 255');
   });
 
@@ -447,6 +449,7 @@ describe('application3D layout', () => {
 
   it('paints 图一 four-piece chrome without a status dot', () => {
     const fillTexts: string[] = [];
+    const fillXs: number[] = [];
     const lineToCalls: number[] = [];
     let arcCalls = 0;
     const ctx = {
@@ -465,8 +468,9 @@ describe('application3D layout', () => {
       fill: () => undefined,
       stroke: () => undefined,
       fillRect: () => undefined,
-      fillText: (text: string) => {
+      fillText: (text: string, x: number) => {
         fillTexts.push(text);
+        fillXs.push(x);
       },
       measureText: (text: string) => ({ width: text.length * 18 }),
       arc: () => {
@@ -491,6 +495,60 @@ describe('application3D layout', () => {
     expect(fillTexts).toContain('2');
     expect(lineToCalls.length).toBe(9);
     expect(arcCalls).toBe(0);
+    const titleX = fillXs[fillTexts.indexOf('运营门户')];
+    const pillX = fillXs[fillTexts.indexOf('严重告警')];
+    expect(titleX).toBeLessThan(256);
+    expect(pillX).toBeLessThan(256);
+    expect(titleX).toBe(CARD_CHROME.iconInset + CARD_CHROME.iconSize + CARD_CHROME.titleGap);
+    expect(pillX).toBe(CARD_CHROME.iconInset + CARD_CHROME.pillPadX);
+  });
+
+  it('paints 运行正常 on the bottom-left pill for healthy cards', () => {
+    const fillTexts: string[] = [];
+    const fillXs: number[] = [];
+    const ctx = {
+      canvas: { width: 512, height: 640 },
+      clearRect: () => undefined,
+      save: () => undefined,
+      restore: () => undefined,
+      beginPath: () => undefined,
+      moveTo: () => undefined,
+      lineTo: () => undefined,
+      arcTo: () => undefined,
+      closePath: () => undefined,
+      clip: () => undefined,
+      fill: () => undefined,
+      stroke: () => undefined,
+      fillRect: () => undefined,
+      fillText: (text: string, x: number) => {
+        fillTexts.push(text);
+        fillXs.push(x);
+      },
+      measureText: (text: string) => ({ width: text.length * 18 }),
+      arc: () => undefined,
+      createRadialGradient: () => ({ addColorStop: () => undefined }),
+      createLinearGradient: () => ({ addColorStop: () => undefined }),
+    } as unknown as CanvasRenderingContext2D;
+
+    const visual = resolveApplication3DCardVisual({
+      name: '本地演示-运营门户',
+      health: {
+        state: 'normal',
+        reason: 'no_active_alarm',
+        activeAlarmCount: 0,
+        highestSeverity: { id: 'normal', label: '正常', color: 'success' },
+      },
+    });
+    expect(visual.statusLabel).toBe('无活跃告警');
+    expect(wallCardStatusLabel(visual)).toBe(HEALTHY_WALL_PILL);
+    paintApplication3DCard(ctx, visual, 'ops-portal', 'front');
+    expect(fillTexts).toContain('运营门户');
+    expect(fillTexts).toContain(HEALTHY_WALL_PILL);
+    expect(fillTexts).not.toContain('无活跃告警');
+    expect(fillTexts).not.toContain('状态未知');
+    expect(fillXs[fillTexts.indexOf(HEALTHY_WALL_PILL)]).toBe(
+      CARD_CHROME.iconInset + CARD_CHROME.pillPadX,
+    );
   });
 
   it('paints no_data critical and info as alarming visuals, not 状态未知', () => {

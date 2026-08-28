@@ -39,18 +39,18 @@ const glassFill = (alpha: number) => rgbaFromHex(CARD_PAINT.glass, alpha);
 export const CARD_GLASS = {
   radius: 13,
   inset: 10,
-  bodyCenter: glassFill(0.78),
+  bodyCenter: glassFill(CARD_PAINT.glassAlpha),
   body: glassFill(CARD_PAINT.glassAlpha),
-  bodyRim: glassFill(0.64),
-  unknownBodyCenter: glassFill(0.78),
+  bodyRim: glassFill(0.58),
+  unknownBodyCenter: glassFill(CARD_PAINT.glassAlpha),
   unknownBody: glassFill(CARD_PAINT.glassAlpha),
-  unknownBodyRim: glassFill(0.64),
-  innerShadow: 'rgba(0, 0, 0, 0.08)',
+  unknownBodyRim: glassFill(0.58),
+  innerShadow: 'rgba(0, 0, 0, 0)',
   title: 'rgba(248, 250, 252, 0.98)',
   titleUnknown: 'rgba(232, 236, 242, 0.96)',
-  frostAlpha: 0.045,
-  frostGain: 0.032,
-  frostStep: 3,
+  frostAlpha: 0.018,
+  frostGain: 0.016,
+  frostStep: 4,
   fontFamily: '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
   titleSize: 54,
   statusSize: 27,
@@ -63,23 +63,29 @@ export const CARD_BADGE = {
   inset: 20,
 } as const;
 
+export const HEALTHY_WALL_PILL = '运行正常';
+
 export const CARD_CHROME = {
-  iconInset: 28,
-  iconSize: 56,
-  iconStroke: 'rgba(255, 255, 255, 0.94)',
-  iconLineWidth: 2.4,
-  titleY: 0.46,
-  pillHeight: 44,
-  pillPadX: 22,
-  pillBottom: 36,
-  pillFill: glassFill(0.4),
+  iconInset: 32,
+  iconSize: 72,
+  iconStroke: 'rgba(255, 255, 255, 0.96)',
+  iconLineWidth: 3.2,
+  titleGap: 18,
+  pillHeight: 42,
+  pillPadX: 20,
+  pillBottom: 28,
+  pillFill: glassFill(0.32),
 } as const;
+
+/** Wall chrome owns 图一 copy; layout DTO labels stay unchanged. */
+export const wallCardStatusLabel = (visual: Application3DCardVisual): string =>
+  visual.cardTone === 'normal' ? HEALTHY_WALL_PILL : visual.statusLabel;
 
 export const CARD_TONE = {
   normal: {
     edge: rgbaFromHex(CARD_PAINT.normalBorder, 0.92),
     edgeWidth: HAIRLINE,
-    glow: { color: rgbaFromHex(CARD_PAINT.normalBorder, 0.18), width: 6 },
+    glow: { color: rgbaFromHex(CARD_PAINT.normalBorder, 0.28), width: 8 },
     innerGlow: 'rgba(0, 0, 0, 0)',
     dot: '#3cbcb0',
     statusText: rgbaFromHex(CARD_PAINT.normalPill, 0.96),
@@ -245,29 +251,15 @@ const paintGlassEdge = (
   const inset = CARD_GLASS.inset;
   const radius = CARD_GLASS.radius;
 
+  roundRectPath(ctx, inset, inset, w - inset * 2, h - inset * 2, radius);
   if (tokens.glow.width > 0 && rgbaAlpha(tokens.glow.color) > 0) {
     ctx.save();
     ctx.shadowColor = tokens.glow.color;
     ctx.shadowBlur = tokens.glow.width;
-    roundRectPath(ctx, inset, inset, w - inset * 2, h - inset * 2, radius);
-    ctx.strokeStyle = tokens.glow.color;
+    ctx.strokeStyle = tokens.edge;
     ctx.lineWidth = tokens.edgeWidth;
     ctx.stroke();
     ctx.restore();
-  }
-
-  if (rgbaAlpha(tokens.innerGlow) > 0.01) {
-    roundRectPath(
-      ctx,
-      inset + 1.5,
-      inset + 1.5,
-      w - inset * 2 - 3,
-      h - inset * 2 - 3,
-      Math.max(radius - 1.5, 0),
-    );
-    ctx.strokeStyle = tokens.innerGlow;
-    ctx.lineWidth = Math.max(tokens.edgeWidth * 0.55, 2);
-    ctx.stroke();
   }
 
   roundRectPath(ctx, inset, inset, w - inset * 2, h - inset * 2, radius);
@@ -292,39 +284,43 @@ const paintGlassBody = (
 
   const body = ctx.createRadialGradient(
     w / 2,
-    h * 0.48,
-    Math.min(w, h) * 0.08,
+    h * 0.42,
+    Math.min(w, h) * 0.06,
     w / 2,
     h * 0.5,
-    Math.max(w, h) * 0.72,
+    Math.max(w, h) * 0.78,
   );
   if (tone === 'unknown') {
     body.addColorStop(0, CARD_GLASS.unknownBodyCenter);
-    body.addColorStop(0.55, CARD_GLASS.unknownBody);
+    body.addColorStop(0.7, CARD_GLASS.unknownBody);
     body.addColorStop(1, CARD_GLASS.unknownBodyRim);
   } else {
     body.addColorStop(0, CARD_GLASS.bodyCenter);
-    body.addColorStop(0.55, CARD_GLASS.body);
+    body.addColorStop(0.7, CARD_GLASS.body);
     body.addColorStop(1, CARD_GLASS.bodyRim);
   }
 
-  roundRectPath(ctx, 0, 0, w, h, radius);
+  // Only the inset rounded pane is filled. Filling the full texture made the
+  // mesh silhouette a matte slab and hid the cyan hairline at the card edge.
+  roundRectPath(ctx, inset, inset, w - inset * 2, h - inset * 2, radius);
   ctx.fillStyle = body;
   ctx.fill();
 
   ctx.save();
   roundRectPath(ctx, inset, inset, w - inset * 2, h - inset * 2, radius);
   ctx.clip();
-  ctx.fillStyle = body;
-  ctx.fillRect(0, 0, w, h);
   paintFrost(ctx, w, h, seed, inset);
-
-  const inner = ctx.createRadialGradient(w / 2, h / 2, 8, w / 2, h / 2, Math.max(w, h) * 0.62);
-  inner.addColorStop(0, CARD_GLASS.innerShadow);
-  inner.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
-  inner.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = inner;
-  ctx.fillRect(0, 0, w, h);
+  const sheen = ctx.createLinearGradient(0, inset, 0, h * 0.38);
+  const sheenHex =
+    tone === 'warning'
+      ? CARD_PAINT.warning
+      : tone === 'critical' || tone === 'error'
+        ? CARD_PAINT.critical
+        : CARD_PAINT.normalBorder;
+  sheen.addColorStop(0, rgbaFromHex(sheenHex, 0.16));
+  sheen.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = sheen;
+  ctx.fillRect(inset, inset, w - inset * 2, h * 0.38);
   ctx.restore();
 
   paintGlassEdge(ctx, w, h, tone);
@@ -378,13 +374,13 @@ const paintStatusPill = (
   visual: Application3DCardVisual,
   tokens: (typeof CARD_TONE)[Application3DCardTone],
 ) => {
-  const w = ctx.canvas.width;
   const h = ctx.canvas.height;
+  const label = wallCardStatusLabel(visual);
   ctx.font = `500 ${CARD_GLASS.statusSize}px ${CARD_GLASS.fontFamily}`;
-  const textW = ctx.measureText(visual.statusLabel).width;
+  const textW = ctx.measureText(label).width;
   const height = CARD_CHROME.pillHeight;
   const width = Math.max(textW + CARD_CHROME.pillPadX * 2, height * 2);
-  const x = (w - width) / 2;
+  const x = CARD_CHROME.iconInset;
   const y = h - CARD_GLASS.inset - CARD_CHROME.pillBottom - height;
   roundRectPath(ctx, x, y, width, height, height / 2);
   ctx.fillStyle = CARD_CHROME.pillFill;
@@ -393,9 +389,9 @@ const paintStatusPill = (
   ctx.lineWidth = Math.max(tokens.edgeWidth * 0.7, 1.6);
   ctx.stroke();
   ctx.fillStyle = tokens.statusText;
-  ctx.textAlign = 'center';
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(visual.statusLabel, w / 2, y + height / 2 + 1);
+  ctx.fillText(label, x + CARD_CHROME.pillPadX, y + height / 2 + 1);
 };
 
 const paintFrontChrome = (
@@ -409,17 +405,21 @@ const paintFrontChrome = (
 
   paintWireframeCube(ctx, CARD_CHROME.iconInset, CARD_CHROME.iconInset, CARD_CHROME.iconSize);
 
-  ctx.textAlign = 'center';
+  const titleX = CARD_CHROME.iconInset + CARD_CHROME.iconSize + CARD_CHROME.titleGap;
+  const titleY = CARD_CHROME.iconInset + CARD_CHROME.iconSize / 2;
+  const badgeLeft = visual.showBadge
+    ? badgeRect(visual.badgeText, w, h).x
+    : w - CARD_BADGE.inset;
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  const textShade = ctx.createRadialGradient(w / 2, h * 0.52, 8, w / 2, h * 0.52, w * 0.42);
-  textShade.addColorStop(0, 'rgba(4, 8, 14, 0.16)');
-  textShade.addColorStop(1, 'rgba(4, 8, 14, 0)');
-  ctx.fillStyle = textShade;
-  ctx.fillRect(0, h * 0.28, w, h * 0.52);
   ctx.fillStyle = tone === 'unknown' ? CARD_GLASS.titleUnknown : CARD_GLASS.title;
   ctx.font = `600 ${CARD_GLASS.titleSize}px ${CARD_GLASS.fontFamily}`;
-  const title = ellipsizeText(visual.title, w - 96, (value) => ctx.measureText(value).width);
-  ctx.fillText(title, w / 2, h * CARD_CHROME.titleY);
+  const title = ellipsizeText(
+    visual.title,
+    Math.max(badgeLeft - titleX - 16, 32),
+    (value) => ctx.measureText(value).width,
+  );
+  ctx.fillText(title, titleX, titleY);
 
   paintStatusPill(ctx, visual, tokens);
 
