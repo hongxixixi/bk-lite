@@ -1586,7 +1586,7 @@ def network_topology_among_uuids(inst_uuids=None, user_info=None, **kwargs):
     seen = set()
     for value in raw:
         if value in (None, ""):
-            continue
+            return _network_topology_closed_set_failure()
         try:
             normalized = normalize_inst_uuid(value)
         except BaseAppException:

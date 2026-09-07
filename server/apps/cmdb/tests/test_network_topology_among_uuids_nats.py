@@ -86,6 +86,31 @@ def test_network_topology_among_uuids_rejects_duplicates_and_invalid_uuid(monkey
     assert invalid["message"] == CLOSED_SET_ERROR
 
 
+def test_network_topology_among_uuids_rejects_null_and_blank_slots(monkeypatch):
+    queried = {"called": False}
+
+    def fake_query(uuids):
+        queried["called"] = True
+        return []
+
+    monkeypatch.setattr(N.InstanceManage, "query_entity_by_uuids", fake_query)
+
+    with_none = N.network_topology_among_uuids(inst_uuids=[SWITCH_UUID, None], user_info=USER_INFO)
+    with_blank = N.network_topology_among_uuids(inst_uuids=[SWITCH_UUID, ""], user_info=USER_INFO)
+
+    assert queried["called"] is False
+    assert with_none == {
+        "result": False,
+        "data": {"nodes": [], "links": []},
+        "message": CLOSED_SET_ERROR,
+    }
+    assert with_blank == {
+        "result": False,
+        "data": {"nodes": [], "links": []},
+        "message": CLOSED_SET_ERROR,
+    }
+
+
 def test_network_topology_among_uuids_fails_closed_when_entity_missing(monkeypatch):
     called = {"among": False}
     monkeypatch.setattr(
