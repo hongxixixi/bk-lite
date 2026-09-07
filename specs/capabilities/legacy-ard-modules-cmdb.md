@@ -177,5 +177,9 @@
 - `[cmdb#20260709-002]` `get_room3d_layout` 中 `rack_id`/`rack_name` 来源统一为 `item['rack_id']` / `item['rack_name']`（`instance_name` 缺失时 fallback 到 `rack_id`），并配套新增 `test_get_room3d_layout_falls_back_to_rack_id_when_name_missing`、`test_get_room3d_layout_returns_rack_type_name_from_cmdb_enum` 两个测试。
 - `[cmdb#20260709-003]` 双向校验修订：`InstanceViewSet.room3d_layout` REST 端点**不存在**（3D 数据走内置数据源 rest_api，不在 ViewSet 路由表内）；NATS `receive_ip_discovery_result` handler 与 `services.ipam_discovery.maybe_dispatch_ip_discovery` 函数**已下线**（功能下沉到 `services/ipam_discovery.py:205,299` 服务层直连 Stargazer 回调）。spec 删除相关端点行，证据行按代码当前位置刷新。
 
+## 2026-09-07 网络状态拓扑闭集 NATS
+
+- `[cmdb#20260907-001]` 新增 NATS `network_topology_among_uuids`：入参 `inst_uuids` + `user_info`，按模型构建 permission_map，调用 `InstanceManage.network_topology_among_uuids`。无权 / 非网络设备 / 非法 UUID / 超上限 / 闭集不完整一律 `{result: False, data: {nodes:[], links:[]}}`，不返回空成功图。RPC 包装：`apps.rpc.cmdb.CMDB.network_topology_among_uuids`。消费方为运营分析网络状态拓扑场景。
+
 ## 7. 证据来源
 `server/apps/cmdb/{urls.py,models/*,models/ipam_models.py:7,graph/*,graph/neo4j.py,graph/drivers/graph_client.py,collection/*,collection/collect_plugin/oceanstor.py,constants/constants.py,tasks/celery_tasks.py:72-74,397,408,nats/nats.py:696,711,942-949,952-1050,services/rack_room.py,services/ipam_*.py,services/ipam_discovery.py:205,299,services/ipam_reconcile.py,utils/ipam_cidr.py,node_configs/network_config_file.py:5-63,views/collect.py:66-68,views/instance.py:1145,1190,1212,1282,management/commands/{model_init.py:7,init_oid.py:11,init_field_groups.py:15,init_display_fields.py:24},support-files/model_config.xlsx}`、`server/apps/operation_analysis/support-files/source_api.json:406`（3D 机房数据源 `cmdb/get_room3d_layout` 注册）；`server/apps/rpc/cmdb.py:44-94`。
