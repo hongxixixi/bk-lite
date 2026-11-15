@@ -1,0 +1,651 @@
+# 监控中心总览。
+# 顶部直接取监控统计。下方由使用者选择一个云区域和一条主机关联：
+# 先查出该云区域的主机，再查出这些主机关联的资产，最后只统计这些资产的未恢复告警。
+meta:
+  schema_version: 1.2.0
+  exported_at: '2026-11-15T00:00:00+08:00'
+  source:
+    organization_id: 0
+  object_counts:
+    dashboards: 0
+    topologies: 0
+    screens: 1
+    reports: 0
+    architectures: 0
+    datasources: 0
+    namespaces: 0
+dashboards: []
+topologies: []
+architectures: []
+reports: []
+datasources: []
+namespaces: []
+screens:
+- key: screen::监控中心总览_内置
+  name: 监控中心总览
+  desc: 顶部是监控实例、对象和插件的直接统计。下方先选择云区域和一条主机关联，再汇总该区域主机、关联资产和这些资产的未恢复告警。
+  other: {}
+  refresh_interval: 0
+  view_sets:
+    viewport:
+      width: 1920
+      height: 1080
+      theme: screen-light
+      background:
+        type: color
+        color: '#F3F6FB'
+    decorations:
+      title: 监控中心总览
+      showClock: false
+      showTitle: true
+    filters:
+    - id: cloud_region__string
+      key: cloud_region
+      name: 云区域
+      type: string
+      order: 0
+      enabled: true
+      inputConfig:
+        control: select
+        optionsSource:
+          type: dynamic
+          sourceRef:
+            type: rest_api
+            value: cmdb/get_cloud_region_options
+          valueField: id
+          labelField: name
+    - id: model_asst__string
+      key: model_asst
+      name: 主机关联
+      type: string
+      order: 1
+      enabled: true
+      inputConfig:
+        control: select
+        optionsSource:
+          type: dynamic
+          sourceRef:
+            type: rest_api
+            value: cmdb/get_model_association_options
+          valueField: model_asst_id
+          labelField: label
+          queryParams:
+            model_id: host
+    queryVariables:
+    - id: region-hosts
+      name: 云区域主机
+      dataSource: CMDB 实例通用查询::cmdb/query_cmdb_instances
+      valueField: inst_uuid
+      params:
+      - name: analysis_mode
+        type: string
+        value: detail
+        alias_name: 分析方式
+        filterType: fixed
+      - name: model_id
+        type: string
+        value: host
+        alias_name: 模型
+        filterType: fixed
+      - name: filters
+        type: conditionFilter
+        alias_name: 条件
+        filterType: fixed
+        value:
+          logic: AND
+          items:
+          - field: cloud
+            op: eq
+            value:
+              ref: cloud_region__string
+    - id: related-assets
+      name: 关联资产
+      dataSource: CMDB 一跳关联通用查询::cmdb/query_cmdb_one_hop
+      valueField: end_uuid
+      params:
+      - name: analysis_mode
+        type: string
+        value: detail
+        alias_name: 分析方式
+        filterType: fixed
+      - name: start_model_id
+        type: string
+        value: host
+        alias_name: 起点模型
+        filterType: fixed
+      - name: model_asst_id
+        type: string
+        alias_name: 关系
+        filterType: fixed
+        value:
+          ref: model_asst__string
+      - name: filters
+        type: conditionFilter
+        alias_name: 起点条件
+        filterType: fixed
+        value:
+          logic: AND
+          items:
+          - field: inst_uuid
+            op: in
+            value:
+              queryRef: region-hosts
+    - id: monitored-assets
+      name: 关联资产的监控实例
+      dataSource: 监控实例通用查询::monitor/query_monitor_instances
+      valueField: instance_id
+      params:
+      - name: analysis_mode
+        type: string
+        value: detail
+        alias_name: 分析方式
+        filterType: fixed
+      - name: cmdb_ids
+        type: string
+        alias_name: CMDB 实例
+        filterType: fixed
+        inputConfig:
+          control: select
+          multiple: true
+        value:
+          queryRef: related-assets
+    items:
+    - h: 88
+      w: 1920
+      x: 0
+      y: 0
+      id: header-bar
+      kind: shape
+      shape: rect
+      zIndex: 1
+      shapeStyle:
+        shadow: 0
+        gradient: false
+        hideBorder: true
+        borderWidth: 0
+        hideBackground: false
+        backgroundColor: '#1E3A8A'
+    - h: 48
+      w: 720
+      x: 36
+      y: 12
+      id: header-title
+      kind: text
+      zIndex: 2
+      content: 监控中心总览
+      textStyle:
+        align: left
+        color: '#FFFFFF'
+        fontSize: 28
+        fontWeight: 700
+    - h: 28
+      w: 900
+      x: 36
+      y: 52
+      id: header-subtitle
+      kind: text
+      zIndex: 2
+      content: 各云区域监控对象覆盖与活跃告警
+      textStyle:
+        align: left
+        color: '#DBEAFE'
+        fontSize: 14
+        fontWeight: 400
+    - h: 28
+      w: 280
+      x: 36
+      y: 108
+      id: coverage-label
+      kind: text
+      zIndex: 2
+      content: 监控覆盖
+      textStyle:
+        align: left
+        color: '#1E3A8A'
+        fontSize: 16
+        fontWeight: 600
+    - h: 120
+      w: 290
+      x: 36
+      y: 148
+      id: coverage-instances
+      type: widget
+      title: 监控实例
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 监控实例
+        chartType: single
+        dataSource: 监控中心总览统计::monitor/get_monitor_statistics
+        selectedFields:
+        - monitor_instance_total
+        thresholdColors:
+        - color: '#2563EB'
+          value: '0'
+    - h: 120
+      w: 290
+      x: 342
+      y: 148
+      id: coverage-active
+      type: widget
+      title: 启用实例
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 启用实例
+        chartType: single
+        dataSource: 监控中心总览统计::monitor/get_monitor_statistics
+        selectedFields:
+        - monitor_instance_active
+        thresholdColors:
+        - color: '#059669'
+          value: '0'
+    - h: 120
+      w: 290
+      x: 648
+      y: 148
+      id: coverage-inactive
+      type: widget
+      title: 停用实例
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 停用实例
+        chartType: single
+        dataSource: 监控中心总览统计::monitor/get_monitor_statistics
+        selectedFields:
+        - monitor_instance_inactive
+        thresholdColors:
+        - color: '#D97706'
+          value: '0'
+    - h: 120
+      w: 290
+      x: 954
+      y: 148
+      id: coverage-objects
+      type: widget
+      title: 监控对象
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 监控对象
+        chartType: single
+        dataSource: 监控中心总览统计::monitor/get_monitor_statistics
+        selectedFields:
+        - monitor_object_total
+        thresholdColors:
+        - color: '#2563EB'
+          value: '0'
+    - h: 120
+      w: 290
+      x: 1260
+      y: 148
+      id: coverage-visible-objects
+      type: widget
+      title: 可见监控对象
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 可见监控对象
+        chartType: single
+        dataSource: 监控中心总览统计::monitor/get_monitor_statistics
+        selectedFields:
+        - monitor_object_visible
+        thresholdColors:
+        - color: '#059669'
+          value: '0'
+    - h: 120
+      w: 290
+      x: 1566
+      y: 148
+      id: coverage-plugins
+      type: widget
+      title: 监控插件
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 监控插件
+        chartType: single
+        dataSource: 监控中心总览统计::monitor/get_monitor_statistics
+        selectedFields:
+        - plugin_total
+        thresholdColors:
+        - color: '#7C3AED'
+          value: '0'
+    - h: 28
+      w: 640
+      x: 36
+      y: 292
+      id: region-label
+      kind: text
+      zIndex: 2
+      content: 云区域活跃告警
+      textStyle:
+        align: left
+        color: '#1E3A8A'
+        fontSize: 16
+        fontWeight: 600
+    - h: 120
+      w: 400
+      x: 36
+      y: 332
+      id: region-hosts
+      type: widget
+      title: 主机
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 主机
+        chartType: single
+        dataSource: CMDB 实例通用查询::cmdb/query_cmdb_instances
+        selectedFields:
+        - instance_count
+        thresholdColors:
+        - color: '#2563EB'
+          value: '0'
+        dataSourceParams:
+        - name: analysis_mode
+          type: string
+          value: count
+          alias_name: 分析方式
+          filterType: fixed
+        - name: model_id
+          type: string
+          value: host
+          alias_name: 模型
+          filterType: fixed
+        - name: filters
+          type: conditionFilter
+          alias_name: 条件
+          filterType: fixed
+          value:
+            logic: AND
+            items:
+            - field: cloud
+              op: eq
+              value:
+                ref: cloud_region__string
+    - h: 120
+      w: 400
+      x: 452
+      y: 332
+      id: related-assets
+      type: widget
+      title: 关联资产
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 关联资产
+        chartType: single
+        dataSource: CMDB 一跳关联通用查询::cmdb/query_cmdb_one_hop
+        selectedFields:
+        - relation_count
+        thresholdColors:
+        - color: '#059669'
+          value: '0'
+        dataSourceParams:
+        - name: analysis_mode
+          type: string
+          value: count
+          alias_name: 分析方式
+          filterType: fixed
+        - name: start_model_id
+          type: string
+          value: host
+          alias_name: 起点模型
+          filterType: fixed
+        - name: model_asst_id
+          type: string
+          alias_name: 关系
+          filterType: fixed
+          value:
+            ref: model_asst__string
+        - name: filters
+          type: conditionFilter
+          alias_name: 起点条件
+          filterType: fixed
+          value:
+            logic: AND
+            items:
+            - field: inst_uuid
+              op: in
+              value:
+                queryRef: region-hosts
+    - h: 120
+      w: 400
+      x: 868
+      y: 332
+      id: open-alerts
+      type: widget
+      title: 未恢复告警
+      zIndex: 3
+      chartType: single
+      valueConfig:
+        name: 未恢复告警
+        chartType: single
+        dataSource: 监控告警通用查询::monitor/query_monitor_alerts
+        selectedFields:
+        - alert_count
+        thresholdColors:
+        - color: '#DC2626'
+          value: '0'
+        dataSourceParams:
+        - name: analysis_mode
+          type: string
+          value: count
+          alias_name: 分析方式
+          filterType: fixed
+        - name: status
+          type: string
+          value:
+          - new
+          alias_name: 状态
+          filterType: fixed
+          inputConfig:
+            control: select
+            multiple: true
+        - name: instance_ids
+          type: string
+          alias_name: 实例
+          filterType: fixed
+          inputConfig:
+            control: select
+            multiple: true
+          value:
+            queryRef: monitored-assets
+    - h: 520
+      w: 600
+      x: 36
+      y: 476
+      id: alert-distribution
+      type: widget
+      title: 告警对象分布
+      zIndex: 3
+      chartType: table
+      valueConfig:
+        name: 告警对象分布
+        chartType: table
+        dataSource: 监控告警通用查询::monitor/query_monitor_alerts
+        tableConfig:
+          columns:
+          - key: monitor_object_name
+            order: 0
+            title: 监控对象
+            visible: true
+          - key: alert_count
+            order: 1
+            title: 告警数
+            visible: true
+        dataSourceParams:
+        - name: analysis_mode
+          type: string
+          value: distribution
+          alias_name: 分析方式
+          filterType: fixed
+        - name: group_by
+          type: string
+          value: monitor_object_id
+          alias_name: 分组
+          filterType: fixed
+        - name: status
+          type: string
+          value:
+          - new
+          alias_name: 状态
+          filterType: fixed
+          inputConfig:
+            control: select
+            multiple: true
+        - name: instance_ids
+          type: string
+          alias_name: 实例
+          filterType: fixed
+          inputConfig:
+            control: select
+            multiple: true
+          value:
+            queryRef: monitored-assets
+    - h: 520
+      w: 600
+      x: 652
+      y: 476
+      id: relation-detail
+      type: widget
+      title: 关联明细
+      zIndex: 3
+      chartType: table
+      valueConfig:
+        name: 关联明细
+        chartType: table
+        dataSource: CMDB 一跳关联通用查询::cmdb/query_cmdb_one_hop
+        tableConfig:
+          columns:
+          - key: start_name
+            order: 0
+            title: 主机
+            visible: true
+          - key: end_name
+            order: 1
+            title: 关联资产
+            visible: true
+          - key: end_uuid
+            order: 2
+            title: 资产标识
+            visible: true
+        dataSourceParams:
+        - name: analysis_mode
+          type: string
+          value: detail
+          alias_name: 分析方式
+          filterType: fixed
+        - name: start_model_id
+          type: string
+          value: host
+          alias_name: 起点模型
+          filterType: fixed
+        - name: model_asst_id
+          type: string
+          alias_name: 关系
+          filterType: fixed
+          value:
+            ref: model_asst__string
+        - name: filters
+          type: conditionFilter
+          alias_name: 起点条件
+          filterType: fixed
+          value:
+            logic: AND
+            items:
+            - field: inst_uuid
+              op: in
+              value:
+                queryRef: region-hosts
+        - name: page
+          type: number
+          value: 1
+          alias_name: 页码
+          filterType: fixed
+        - name: page_size
+          type: number
+          value: 20
+          alias_name: 每页条数
+          filterType: fixed
+    - h: 520
+      w: 600
+      x: 1268
+      y: 476
+      id: alert-detail
+      type: widget
+      title: 告警明细
+      zIndex: 3
+      chartType: table
+      valueConfig:
+        name: 告警明细
+        chartType: table
+        dataSource: 监控告警通用查询::monitor/query_monitor_alerts
+        tableConfig:
+          columns:
+          - key: content
+            order: 0
+            title: 告警
+            visible: true
+          - key: monitor_instance_name
+            order: 1
+            title: 实例
+            visible: true
+          - key: monitor_object_name
+            order: 2
+            title: 监控对象
+            visible: true
+          - key: level
+            order: 3
+            title: 级别
+            visible: true
+          - key: status
+            order: 4
+            title: 状态
+            visible: true
+        dataSourceParams:
+        - name: analysis_mode
+          type: string
+          value: detail
+          alias_name: 分析方式
+          filterType: fixed
+        - name: status
+          type: string
+          value:
+          - new
+          alias_name: 状态
+          filterType: fixed
+          inputConfig:
+            control: select
+            multiple: true
+        - name: instance_ids
+          type: string
+          alias_name: 实例
+          filterType: fixed
+          inputConfig:
+            control: select
+            multiple: true
+          value:
+            queryRef: monitored-assets
+        - name: page
+          type: number
+          value: 1
+          alias_name: 页码
+          filterType: fixed
+        - name: page_size
+          type: number
+          value: 20
+          alias_name: 每页条数
+          filterType: fixed
+  refs:
+    datasource_keys:
+    - 监控中心总览统计::monitor/get_monitor_statistics
+    - CMDB 实例通用查询::cmdb/query_cmdb_instances
+    - CMDB 一跳关联通用查询::cmdb/query_cmdb_one_hop
+    - 监控实例通用查询::monitor/query_monitor_instances
+    - 监控告警通用查询::monitor/query_monitor_alerts
+    - 云区域列表::cmdb/get_cloud_region_options
+    - 模型关联列表::cmdb/get_model_association_options
+    namespace_keys: []

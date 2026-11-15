@@ -34,6 +34,7 @@ interface ScreenWidgetRendererProps {
   chartThemeMode: OpsChartThemeMode;
   filterDefinitions?: UnifiedFilterDefinition[];
   unifiedFilterValues?: Record<string, FilterValue>;
+  queryResultValues?: Record<string, unknown[]>;
   filterSearchVersion?: number;
   namespaceSearchVersion?: number;
   builtinNamespaceId?: number;
@@ -65,6 +66,7 @@ const ScreenWidgetRenderer: React.FC<ScreenWidgetRendererProps> = ({
   chartThemeMode,
   filterDefinitions,
   unifiedFilterValues,
+  queryResultValues,
   filterSearchVersion = 0,
   namespaceSearchVersion = 0,
   builtinNamespaceId,
@@ -115,6 +117,7 @@ const ScreenWidgetRenderer: React.FC<ScreenWidgetRendererProps> = ({
             refreshCause={refreshCause}
             unifiedFilterValues={unifiedFilterValues}
             filterDefinitions={filterDefinitions}
+            queryResultValues={queryResultValues}
             builtinNamespaceId={builtinNamespaceId}
             onRenderStatus={onRenderStatus}
             layoutEditable={layoutEditable}

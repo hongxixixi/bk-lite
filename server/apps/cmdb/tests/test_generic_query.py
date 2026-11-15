@@ -818,6 +818,7 @@ def test_attribute_operators_and_or_group_compile():
                 {"field": "inst_name", "op": "empty"},
                 {"field": "cpu", "op": "gte", "value": "4"},
                 {"field": "os_type", "op": "in", "value": "Linux,Windows"},
+                {"field": "inst_name", "op": "in", "value": ["h1", "h2"]},
             ],
         },
     )
@@ -827,6 +828,7 @@ def test_attribute_operators_and_or_group_compile():
         {"field": "inst_name", "type": "empty"},
         {"field": "cpu", "type": "int>=", "value": 4},
         {"field": "os_type", "type": "list_any[]", "value": ["Linux", "Windows"]},
+        {"field": "inst_name", "type": "str[]", "value": ["h1", "h2"]},
     ]
     eq_logic, eq_conditions = compile_attribute_conditions(
         types,
@@ -841,7 +843,7 @@ def test_attribute_operators_and_or_group_compile():
     with pytest.raises(GenericQueryError, match="运算符不受支持"):
         compile_attribute_conditions(
             types,
-            {"logic": "AND", "items": [{"field": "inst_name", "op": "in", "value": "web"}]},
+            {"logic": "AND", "items": [{"field": "inst_name", "op": "regex", "value": "web"}]},
         )
     empty_logic, empty_items = compile_attribute_conditions(types, {"logic": "OR", "items": []})
     assert (empty_logic, empty_items) == ("OR", [])

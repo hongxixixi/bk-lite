@@ -18,13 +18,14 @@ import { DatasourceItem } from "@/app/ops-analysis/types/dataSource";
 import type { InteractionSampleTicket } from "@/app/ops-analysis/utils/interactionSample";
 import {
   buildWidgetExtraParams,
-  buildWidgetRequestParams,
   buildWidgetRequestSignatureParams,
+  safeBuildWidgetRequestParams,
   createWidgetRequestHistory,
   decideWidgetRequest,
   hasActiveWidgetRuntimeParams,
   shouldShowInitialWidgetLoading,
 } from "@/app/ops-analysis/utils/widgetDataTransform";
+import { QueryResultBlockedError } from "@/app/ops-analysis/utils/queryResultVariable";
 import {
   beginOwnerRequest,
   finishOwnerRequest,
@@ -207,6 +208,7 @@ export interface WidgetWrapperProps {
   dataSource?: DatasourceItem;
   unifiedFilterValues?: Record<string, FilterValue>;
   filterDefinitions?: UnifiedFilterDefinition[];
+  queryResultValues?: Record<string, unknown[]>;
   filterSearchVersion?: number;
   namespaceSearchVersion?: number;
   reloadVersion?: string;
@@ -238,6 +240,7 @@ const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
   dataSource,
   unifiedFilterValues,
   filterDefinitions,
+  queryResultValues,
   filterSearchVersion = 0,
   namespaceSearchVersion = 0,
   reloadVersion = "0:0",
@@ -647,13 +650,14 @@ const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
       return null;
     }
 
-    return buildWidgetRequestParams({
+    return safeBuildWidgetRequestParams({
       config,
       dataSource,
       extraParams: requestExtraParams,
       unifiedFilterValues,
       filterBindings: config?.filterBindings,
       filterDefinitions,
+      queryResultValues,
       resolutionContext: dateRangeResolutionContext,
       chartType,
       t,
@@ -665,6 +669,7 @@ const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
     requestExtraParams,
     unifiedFilterValues,
     filterDefinitions,
+    queryResultValues,
     dateRangeResolutionContext,
     chartType,
     t,
@@ -675,17 +680,23 @@ const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
       return null;
     }
 
-    return buildWidgetRequestSignatureParams({
-      config,
-      dataSource,
-      extraParams: requestExtraParams,
-      unifiedFilterValues,
-      filterBindings: config?.filterBindings,
-      filterDefinitions,
-      resolutionContext: dateRangeResolutionContext,
-      chartType,
-      t,
-    });
+    try {
+      return buildWidgetRequestSignatureParams({
+        config,
+        dataSource,
+        extraParams: requestExtraParams,
+        unifiedFilterValues,
+        filterBindings: config?.filterBindings,
+        filterDefinitions,
+        queryResultValues,
+        resolutionContext: dateRangeResolutionContext,
+        chartType,
+        t,
+      });
+    } catch (error) {
+      if (error instanceof QueryResultBlockedError) return null;
+      throw error;
+    }
   }, [
     requestEnabled,
     config,
@@ -693,6 +704,7 @@ const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
     requestExtraParams,
     unifiedFilterValues,
     filterDefinitions,
+    queryResultValues,
     dateRangeResolutionContext,
     chartType,
     t,

@@ -21,6 +21,7 @@ _FILTER_TYPES = {
     ("string", "eq"): "str=",
     ("string", "ne"): "str<>",
     ("string", "contains"): "str*",
+    ("string", "in"): "str[]",
     ("string", "empty"): "empty",
     ("number", "eq"): "int=",
     ("number", "gt"): "int>",
@@ -342,6 +343,11 @@ def build_attribute_filter(attr_types: dict[str, str], field: str | None, op: st
     if value in (None, "") or (isinstance(value, list) and not value):
         raise GenericQueryError("属性过滤必须给出值")
     parsed = value
+    if kind == "string" and op == "in":
+        selected = _enum_membership_values(value, split_commas=True)
+        if not selected:
+            raise GenericQueryError("属性过滤必须给出值")
+        return {"field": field, "type": "str[]", "value": selected}
     if kind == "number":
         parsed = _as_number(value)
     if op == "in":

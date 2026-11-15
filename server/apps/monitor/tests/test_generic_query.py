@@ -86,6 +86,57 @@ def test_monitor_instance_detail_keeps_identity_and_the_full_count():
     assert stopped_row["ip"] == "10.0.0.8"
 
 
+def test_monitor_instance_query_narrows_by_cmdb_id():
+    obj = _object()
+    _instance(obj, "host-1", cmdb_id="cmdb-1")
+    _instance(obj, "host-2", cmdb_id="cmdb-2")
+    matched = query_instances(
+        MonitorInstance.objects.filter(monitor_object=obj),
+        analysis_mode="detail",
+        cmdb_ids=["cmdb-2"],
+        page=1,
+        page_size=20,
+    )
+    empty = query_instances(
+        MonitorInstance.objects.filter(monitor_object=obj),
+        analysis_mode="detail",
+        cmdb_ids=[],
+        page=1,
+        page_size=20,
+    )
+
+    assert [item["instance_id"] for item in matched["items"]] == ["host-2"]
+    assert empty["count"] == 0
+
+
+def test_monitor_instance_query_by_cmdb_id_spans_objects(monkeypatch):
+    from apps.monitor.nats import generic_query as nats_query
+
+    hosts = _object()
+    databases = MonitorObject.objects.create(name="db-object", level="base")
+    _instance(hosts, "host-1", cmdb_id="cmdb-1")
+    _instance(databases, "db-1", cmdb_id="cmdb-2")
+
+    def allow(_user_info, instance_ids=None):
+        queryset = MonitorInstance.objects.filter(is_deleted=False)
+        if instance_ids is not None:
+            queryset = queryset.filter(id__in=list(instance_ids))
+        return queryset, None
+
+    monkeypatch.setattr(nats_query, "_get_nats_accessible_instance_queryset", allow)
+    found = nats_query.query_monitor_instances(
+        analysis_mode="detail",
+        cmdb_ids=["cmdb-1", "cmdb-2"],
+        page=1,
+        page_size=20,
+        user_info={"user_id": 1},
+    )
+    assert {item["instance_id"] for item in found["data"]["items"]} == {"host-1", "db-1"}
+
+    with pytest.raises(GenericQueryError, match="监控对象不能为空"):
+        nats_query.query_monitor_instances(analysis_mode="detail", user_info={})
+
+
 def test_monitor_instance_column_uses_the_language_display_name(monkeypatch):
     obj = MonitorObject.objects.create(name="Host", display_name="库内展示名", level="base")
     _instance(obj, "host-1", name="web")

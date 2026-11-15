@@ -199,6 +199,8 @@ interface ViewConfigPropsWithManager extends ViewConfigProps {
   dataSourceManager: ReturnType<typeof useDataSourceManager>;
   filterDefinitions?: UnifiedFilterDefinition[];
   unifiedFilterValues?: Record<string, FilterValue>;
+  queryVariables?: import('@/app/ops-analysis/utils/queryResultVariable').QueryResultVariable[];
+  queryResultValues?: Record<string, unknown[]>;
 }
 
 const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
@@ -209,6 +211,8 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
   dataSourceManager,
   filterDefinitions = [],
   unifiedFilterValues = {},
+  queryVariables = [],
+  queryResultValues,
   builtinNamespaceId,
   showChartThemeMode = false,
   surface = 'dashboard',
@@ -1561,6 +1565,7 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
         dataSource={previewRequestDataSource}
         unifiedFilterValues={unifiedFilterValues}
         filterDefinitions={previewRequestFilterDefinitions}
+        queryResultValues={queryResultValues}
         builtinNamespaceId={previewRequestNamespaceId}
         surface={surface}
         reloadVersion={previewReloadVersion}
@@ -1737,6 +1742,11 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
             filterBindings={filterBindings}
             globalFilters={filterDefinitions}
             globalFilterValues={unifiedFilterValues}
+            queryResults={queryVariables.map((item) => ({ id: item.id, name: item.name }))}
+            filterChoices={filterDefinitions.filter((item) => item.enabled !== false).map((item) => ({
+              id: item.id,
+              name: item.name || item.key,
+            }))}
             onFilterBindingsChange={setFilterBindings}
             onEditInputConfig={handleEditInputConfig}
             onParamOptionsResolved={(param, options) =>

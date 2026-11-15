@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Button, Input, InputNumber, Select } from 'antd';
+import { isFilterValueRef, isQueryResultRef } from '@/app/ops-analysis/utils/queryResultVariable';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ConditionFieldOption } from '@/app/ops-analysis/types/dataSource';
 import {
@@ -20,6 +21,8 @@ interface ConditionFilterInputProps {
   onChange?: (value: ConditionGroup) => void;
   fields: ConditionFieldOption[];
   disabled?: boolean;
+  queryResults?: Array<{ id: string; name: string }>;
+  filters?: Array<{ id: string; name: string }>;
 }
 
 const operatorLabel = (op: string, t: (key: string) => string) => {
@@ -64,6 +67,8 @@ const ConditionFilterInput: React.FC<ConditionFilterInputProps> = ({
   onChange,
   fields,
   disabled = false,
+  queryResults = [],
+  filters = [],
 }) => {
   const { t } = useTranslation();
   const group = useMemo(() => parseConditionGroup(value), [value]);
@@ -96,6 +101,20 @@ const ConditionFilterInput: React.FC<ConditionFilterInputProps> = ({
         const valueType = field?.valueType || 'string';
         const operators = operatorsForFieldType(valueType);
         const multiple = item.op === 'in';
+        const referenced = isQueryResultRef(item.value) || isFilterValueRef(item.value);
+        const referenceOptions = [
+          ...queryResults.map((choice) => ({
+            label: t('dashboard.queryResultChoice', '查询结果 · {name}', { name: choice.name }),
+            value: `query:${choice.id}`,
+          })),
+          ...filters.map((choice) => ({
+            label: t('dashboard.filterValueChoice', '筛选 · {name}', { name: choice.name }),
+            value: `filter:${choice.id}`,
+          })),
+        ];
+        const referenceValue = isQueryResultRef(item.value)
+          ? `query:${item.value.queryRef}`
+          : (isFilterValueRef(item.value) ? `filter:${item.value.ref}` : undefined);
         return (
           <div
             key={`${item.field || 'row'}-${index}`}
@@ -137,7 +156,29 @@ const ConditionFilterInput: React.FC<ConditionFilterInputProps> = ({
             </OperatorSlot>
             <ValueSlot>
               {item.op === 'empty' ? <div className="min-h-8" /> : null}
-              {item.op !== 'empty' && valueType === 'number' ? (
+              {item.op !== 'empty' && referenceOptions.length > 0 ? (
+                <Select
+                  allowClear
+                  aria-label={t('dashboard.queryResultRef', '引用查询结果或筛选')}
+                  className="mb-1 w-full"
+                  disabled={disabled}
+                  placeholder={t('dashboard.queryResultRef', '引用查询结果或筛选')}
+                  value={referenceValue}
+                  options={referenceOptions}
+                  onChange={(next) => {
+                    if (!next) {
+                      emit(updateConditionRow(group, index, { value: undefined }));
+                      return;
+                    }
+                    emit(updateConditionRow(group, index, {
+                      value: next.startsWith('query:')
+                        ? { queryRef: next.slice('query:'.length) }
+                        : { ref: next.slice('filter:'.length) },
+                    }));
+                  }}
+                />
+              ) : null}
+              {item.op !== 'empty' && !referenced && valueType === 'number' ? (
                 <InputNumber
                   aria-label={t('dashboard.conditionFilter.value')}
                   data-testid="condition-value"
@@ -148,7 +189,7 @@ const ConditionFilterInput: React.FC<ConditionFilterInputProps> = ({
                   onChange={(next) => emit(updateConditionRow(group, index, { value: next }))}
                 />
               ) : null}
-              {item.op !== 'empty' && valueType === 'enum' ? (
+              {item.op !== 'empty' && !referenced && valueType === 'enum' ? (
                 <Select
                   aria-label={t('dashboard.conditionFilter.value')}
                   data-testid="condition-value"
@@ -164,7 +205,7 @@ const ConditionFilterInput: React.FC<ConditionFilterInputProps> = ({
                   onChange={(next) => emit(updateConditionRow(group, index, { value: next }))}
                 />
               ) : null}
-              {item.op !== 'empty' && valueType === 'string' ? (
+              {item.op !== 'empty' && !referenced && valueType === 'string' ? (
                 <Input
                   aria-label={t('dashboard.conditionFilter.value')}
                   data-testid="condition-value"

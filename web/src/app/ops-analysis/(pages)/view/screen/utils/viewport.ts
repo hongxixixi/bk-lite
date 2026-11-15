@@ -413,6 +413,7 @@ export const normalizeScreenViewSets = (value: unknown): ScreenViewSets => {
     }),
     decorations,
     filters,
+    queryVariables: Array.isArray(source.queryVariables) ? source.queryVariables : undefined,
   };
 
   return migrateLegacyChrome(normalized);
@@ -444,4 +445,5 @@ export const updateScreenViewport = (
   ),
   decorations: { ...viewSets.decorations },
   filters: [...(viewSets.filters ?? [])],
+  queryVariables: viewSets.queryVariables,
 });

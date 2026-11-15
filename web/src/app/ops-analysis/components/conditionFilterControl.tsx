@@ -35,6 +35,8 @@ interface ConditionFilterControlProps {
   resolvedFieldQuery?: ResolvedOptionsQuery;
   fieldQuerySignature?: string;
   disabled?: boolean;
+  queryResults?: Array<{ id: string; name: string }>;
+  filters?: Array<{ id: string; name: string }>;
 }
 
 const ConditionFilterControl: React.FC<ConditionFilterControlProps> = ({
@@ -45,6 +47,8 @@ const ConditionFilterControl: React.FC<ConditionFilterControlProps> = ({
   resolvedFieldQuery,
   fieldQuerySignature,
   disabled = false,
+  queryResults,
+  filters,
 }) => {
   const api = useDataSourceApi();
   // 这个 hook 每次渲染都返回新对象。放进依赖后，属性加载的 setState 会立刻再发一次请求。
@@ -123,6 +127,8 @@ const ConditionFilterControl: React.FC<ConditionFilterControlProps> = ({
       onChange={onChange}
       fields={fields}
       disabled={disabled}
+      queryResults={queryResults}
+      filters={filters}
     />
   );
 };

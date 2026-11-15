@@ -189,6 +189,7 @@ export interface ScreenViewSets {
   items: ScreenItem[];
   decorations: ScreenDecorationsConfig;
   filters?: UnifiedFilterDefinition[];
+  queryVariables?: import('@/app/ops-analysis/utils/queryResultVariable').QueryResultVariable[];
 }
 
 export interface ScreenProps {

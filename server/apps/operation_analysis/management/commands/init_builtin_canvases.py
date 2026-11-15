@@ -5,8 +5,9 @@
 合并 source_api.json、support-files/builtin_canvases.yaml、
 support-files/flow_dashboard.yaml、
 support-files/weopsx_platform_usage_dashboard.yaml、
-support-files/weopsx_ops_overview_dashboard.yaml 与
-support-files/zombie_host_report.yaml 中的内置定义，
+support-files/weopsx_ops_overview_dashboard.yaml、
+support-files/zombie_host_report.yaml 与
+support-files/monitor_center_region_screen.yaml 中的内置定义，
 复用 ImportService 在一个事务中同步数据源和画布。
 
 - YAML 文件不存在或为空时静默跳过
@@ -50,6 +51,10 @@ WEOPSX_OPS_OVERVIEW_YAML_PATH = os.path.join(
 ZOMBIE_HOST_REPORT_YAML_PATH = os.path.join(
     os.path.dirname(YAML_FILE_PATH),
     "zombie_host_report.yaml",
+)
+MONITOR_CENTER_REGION_SCREEN_YAML_PATH = os.path.join(
+    os.path.dirname(YAML_FILE_PATH),
+    "monitor_center_region_screen.yaml",
 )
 MERGEABLE_SECTIONS = ("dashboards", "topologies", "architectures", "screens", "reports", "datasources", "namespaces")
 DEFAULT_RETIRE_LIMIT = 200
@@ -242,6 +247,7 @@ def _get_builtin_canvas_file_paths():
         WEOPSX_PLATFORM_USAGE_YAML_PATH,
         WEOPSX_OPS_OVERVIEW_YAML_PATH,
         ZOMBIE_HOST_REPORT_YAML_PATH,
+        MONITOR_CENTER_REGION_SCREEN_YAML_PATH,
     ]
     seen = {os.path.abspath(path) for path in paths}
     for path in extra_files:

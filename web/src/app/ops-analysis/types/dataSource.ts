@@ -219,7 +219,7 @@ export type InputControlConfig =
 export interface ParamItem {
   id?: string;
   name: string;
-  value: string | number | boolean | Array<string | number> | [number, number] | DateRangeValue | ConditionFilterValue | null | undefined;
+  value: string | number | boolean | Array<string | number> | [number, number] | DateRangeValue | ConditionFilterValue | { queryRef: string } | { ref: string } | null | undefined;
   /** 种子里保留、界面不展示。旧组件仍可提交。 */
   hidden?: boolean;
   alias_name: string;

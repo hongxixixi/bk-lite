@@ -4,6 +4,11 @@ import type {
   UnifiedFilterDefinition,
 } from '@/app/ops-analysis/types/dashBoard';
 import type { InputOption, ParamItem } from '@/app/ops-analysis/types/dataSource';
+import {
+  QueryResultBlockedError,
+  readAppliedFilterValue,
+  substituteParamRefs,
+} from '@/app/ops-analysis/utils/queryResultVariable';
 import { supportsComponentSwitch } from '@/app/ops-analysis/utils/componentParamSwitch';
 import { formatOpsRequestTime } from '@/app/ops-analysis/utils/dateTime';
 import { buildTableQueryParams } from '@/app/ops-analysis/utils/tablePagination';
@@ -681,6 +686,7 @@ export const buildWidgetRequestParams = ({
   unifiedFilterValues,
   filterBindings,
   filterDefinitions,
+  queryResultValues,
   resolutionContext = createDateRangeResolutionContext(),
   chartType,
   t,
@@ -691,6 +697,7 @@ export const buildWidgetRequestParams = ({
   unifiedFilterValues?: Record<string, FilterValue>;
   filterBindings?: FilterBindings;
   filterDefinitions?: UnifiedFilterDefinition[];
+  queryResultValues?: Record<string, unknown[]>;
   resolutionContext?: DateRangeResolutionContext;
   chartType?: string;
   t?: WidgetMessage;
@@ -710,12 +717,24 @@ export const buildWidgetRequestParams = ({
     unifiedFilterValues,
     filterBindings,
     filterDefinitions,
+    queryResultValues,
     resolutionContext,
     chartType: chartType || config?.chartType,
     t,
   });
 
   return requestParams;
+};
+
+export const safeBuildWidgetRequestParams = (
+  input: Parameters<typeof buildWidgetRequestParams>[0],
+) => {
+  try {
+    return buildWidgetRequestParams(input);
+  } catch (error) {
+    if (error instanceof QueryResultBlockedError) return null;
+    throw error;
+  }
 };
 
 export const buildWidgetRequestSignatureParams = ({
@@ -725,6 +744,7 @@ export const buildWidgetRequestSignatureParams = ({
   unifiedFilterValues,
   filterBindings,
   filterDefinitions,
+  queryResultValues,
   resolutionContext = createDateRangeResolutionContext(),
   chartType,
   t,
@@ -735,6 +755,7 @@ export const buildWidgetRequestSignatureParams = ({
   unifiedFilterValues?: Record<string, FilterValue>;
   filterBindings?: FilterBindings;
   filterDefinitions?: UnifiedFilterDefinition[];
+  queryResultValues?: Record<string, unknown[]>;
   resolutionContext?: DateRangeResolutionContext;
   chartType?: string;
   t?: WidgetMessage;
@@ -754,6 +775,7 @@ export const buildWidgetRequestSignatureParams = ({
     unifiedFilterValues,
     filterBindings,
     filterDefinitions,
+    queryResultValues,
     resolutionContext,
     timeRangeFormatter: formatTimeRangeForSignature,
     chartType: chartType || config?.chartType,
@@ -770,6 +792,7 @@ export const processDataSourceParams = ({
   unifiedFilterValues,
   filterBindings,
   filterDefinitions,
+  queryResultValues,
   resolutionContext = createDateRangeResolutionContext(),
   timeRangeFormatter = formatTimeRange,
   t: translate,
@@ -780,6 +803,7 @@ export const processDataSourceParams = ({
   unifiedFilterValues?: Record<string, FilterValue>;
   filterBindings?: FilterBindings;
   filterDefinitions?: UnifiedFilterDefinition[];
+  queryResultValues?: Record<string, unknown[]>;
   resolutionContext?: DateRangeResolutionContext;
   timeRangeFormatter?: (timeParams: any) => unknown;
   chartType?: string;
@@ -887,9 +911,13 @@ export const processDataSourceParams = ({
     value: unknown,
     multiple: boolean,
   ) => {
+    const resolved = substituteParamRefs(value, {
+      queryResultValues: queryResultValues || {},
+      readFilter: (ref) => readAppliedFilterValue(ref, filterDefinitions, unifiedFilterValues),
+    });
     // 仅字符串侧按 multiple 规范形状；timeRange/dateRange 等保持原协议
     if (type === 'string') {
-      const shaped = coerceRequestValueForMultiple(value, multiple);
+      const shaped = coerceRequestValueForMultiple(resolved, multiple);
       if (shaped === null) {
         delete processedParams[name];
         return;
@@ -898,15 +926,15 @@ export const processDataSourceParams = ({
       return;
     }
     if (
-      value === null ||
-      value === undefined ||
-      value === '' ||
-      (Array.isArray(value) && value.length === 0)
+      resolved === null ||
+      resolved === undefined ||
+      resolved === '' ||
+      (Array.isArray(resolved) && resolved.length === 0)
     ) {
       delete processedParams[name];
       return;
     }
-    setProcessedParam(name, type, value);
+    setProcessedParam(name, type, resolved);
   };
 
   const organizationNames: string[] = [];

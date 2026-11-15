@@ -29,6 +29,7 @@ interface ScreenToolbarProps {
   onOpenSubscription?: () => void;
   onOpenSettings: () => void;
   onOpenFilterConfig: () => void;
+  onOpenQueryVariables?: () => void;
   onPreview: () => void;
   onRefresh: () => void;
   frequenceValue?: number;
@@ -54,6 +55,7 @@ const ScreenToolbar: React.FC<ScreenToolbarProps> = ({
   onOpenSubscription,
   onOpenSettings,
   onOpenFilterConfig,
+  onOpenQueryVariables,
   onPreview,
   onRefresh,
   frequenceValue = 0,
@@ -137,6 +139,18 @@ const ScreenToolbar: React.FC<ScreenToolbarProps> = ({
               className={iconButtonClassName}
             />
           </Tooltip>
+          {onOpenQueryVariables ? (
+            <Tooltip title={t('dashboard.queryResultVariables', '查询结果变量')}>
+              <Button
+                type="text"
+                aria-label={t('dashboard.queryResultVariables', '查询结果变量')}
+                onClick={onOpenQueryVariables}
+                className={iconButtonClassName}
+              >
+                {t('dashboard.queryResultShort', '变量')}
+              </Button>
+            </Tooltip>
+          ) : null}
         </div>
 
         <PermissionWrapper requiredPermissions={['EditChart']}>

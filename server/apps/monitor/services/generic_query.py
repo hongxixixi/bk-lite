@@ -91,6 +91,7 @@ def query_instances(
     analysis_mode: str,
     status: str | None = None,
     instance_ids=None,
+    cmdb_ids=None,
     group_by: str | None = None,
     order_by: str | None = None,
     order_dir: str | None = None,
@@ -102,6 +103,9 @@ def query_instances(
     if _filled(group_by):
         raise GenericQueryError("当前查询不支持分组")
     queryset = _filter_instances(queryset, status, instance_ids)
+    if cmdb_ids is not None:
+        selected_cmdb = _id_list(cmdb_ids)
+        queryset = queryset.none() if not selected_cmdb else queryset.filter(cmdb_id__in=selected_cmdb)
     page_no, size = _parse_page(page, page_size)
     queryset = _order_instances(queryset, _instance_order(order_by, order_dir))
     total = queryset.count()

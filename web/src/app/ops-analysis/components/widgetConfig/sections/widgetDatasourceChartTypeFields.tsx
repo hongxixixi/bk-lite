@@ -25,6 +25,7 @@ import type {
 } from '@/app/ops-analysis/types/dashBoard';
 import type { DatasourceItem, InputOption, ParamItem } from '@/app/ops-analysis/types/dataSource';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
+import type { QueryResultChoice } from '@/app/ops-analysis/components/queryResultValueControl';
 import { FilterBindingPanel } from '@/app/ops-analysis/components/unifiedFilter';
 import { ConfigSectionTitle } from '../configTitles';
 
@@ -86,6 +87,8 @@ interface WidgetDatasourceChartTypeFieldsProps {
   onOpenDataSourceSelector: () => void;
   onEditInputConfig: (param: ParamItem) => void;
   onParamOptionsResolved: (param: ParamItem, options: InputOption[]) => void;
+  queryResults?: QueryResultChoice[];
+  filterChoices?: QueryResultChoice[];
   children?: React.ReactNode;
 }
 
@@ -178,7 +181,8 @@ export const WidgetQueryFields: React.FC<
     't' | 'selectedDataSource' | 'effectiveDataSource' | 'hasQueryParams' |
     'shouldShowUnifiedFilterSection' | 'hasUnifiedFilterBindings' |
     'previewFilterDefinitions' | 'filterBindings' | 'globalFilters' | 'globalFilterValues' |
-    'onFilterBindingsChange' | 'onEditInputConfig' | 'onParamOptionsResolved' | 'children'>
+    'onFilterBindingsChange' | 'onEditInputConfig' | 'onParamOptionsResolved' |
+    'queryResults' | 'filterChoices' | 'children'>
 > = ({
   t,
   selectedDataSource,
@@ -193,6 +197,8 @@ export const WidgetQueryFields: React.FC<
   onFilterBindingsChange,
   onEditInputConfig,
   onParamOptionsResolved,
+  queryResults,
+  filterChoices,
   children,
 }) => (
   <section>
@@ -207,6 +213,8 @@ export const WidgetQueryFields: React.FC<
           globalFilters={globalFilters}
           filterBindings={filterBindings}
           globalFilterValues={globalFilterValues}
+          queryResults={queryResults}
+          filterChoices={filterChoices}
           onEditInputConfig={onEditInputConfig}
           onParamOptionsResolved={(param, options) =>
             onParamOptionsResolved(param, options)

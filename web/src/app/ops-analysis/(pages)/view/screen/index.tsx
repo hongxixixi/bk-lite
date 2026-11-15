@@ -34,6 +34,8 @@ import { useOpsAnalysis } from "@/app/ops-analysis/context/common";
 import { useShareOrganizationSeed } from "@/app/ops-analysis/context/shareOrganization";
 import { useCanvasResources } from "@/app/ops-analysis/hooks/useCanvasResources";
 import { useDataSourceManager } from "@/app/ops-analysis/hooks/useDataSource";
+import { useQueryResultVariables } from "@/app/ops-analysis/hooks/useQueryResultVariables";
+import QueryResultVariableModal from "@/app/ops-analysis/components/queryResultVariableModal";
 import {
   areScreenDataConfigPropsEqual,
   isScreenPreviewHostVisible,
@@ -175,6 +177,8 @@ const ScreenDataConfig = memo(
     builtinNamespaceId,
     filterDefinitions,
     unifiedFilterValues,
+    queryVariables,
+    queryResultValues,
     configSection,
     onConfigSectionChange,
     onSectionErrorsChange,
@@ -190,6 +194,8 @@ const ScreenDataConfig = memo(
     builtinNamespaceId?: number;
     filterDefinitions?: UnifiedFilterDefinition[];
     unifiedFilterValues?: Record<string, FilterValue>;
+    queryVariables?: import("@/app/ops-analysis/utils/queryResultVariable").QueryResultVariable[];
+    queryResultValues?: Record<string, unknown[]>;
     configSection?: "data" | "interaction";
     onConfigSectionChange?: (section: "data" | "interaction") => void;
     onSectionErrorsChange?: (errors: {
@@ -222,6 +228,8 @@ const ScreenDataConfig = memo(
         builtinNamespaceId={builtinNamespaceId}
         filterDefinitions={filterDefinitions}
         unifiedFilterValues={unifiedFilterValues}
+        queryVariables={queryVariables}
+        queryResultValues={queryResultValues}
         onDirtyChange={onDirtyChange}
         onConfirm={onConfirm}
         onClose={onClose}
@@ -279,6 +287,7 @@ const Screen = forwardRef<ScreenRef, ScreenProps>(({
     useState(false);
   const [displayModalVisible, setDisplayModalVisible] = useState(false);
   const [filterConfigOpen, setFilterConfigOpen] = useState(false);
+  const [queryVariableOpen, setQueryVariableOpen] = useState(false);
   const [widgetSelectorOpen, setWidgetSelectorOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
@@ -828,6 +837,13 @@ const Screen = forwardRef<ScreenRef, ScreenProps>(({
       dataSources.find((item) => String(item.id) === String(dataSource)),
     [dataSources],
   );
+  const queryResults = useQueryResultVariables({
+    variables: activeViewSets.queryVariables,
+    filterValues: queryState.appliedFilterValues,
+    filterDefinitions: queryState.definitions,
+    findDataSource: dataSourceResolver,
+    reloadToken: refreshVersion,
+  });
 
   const handleRefresh = useCallback(() => {
     setRefreshCause("manual");
@@ -1402,6 +1418,7 @@ const Screen = forwardRef<ScreenRef, ScreenProps>(({
         dataSourceResolver={dataSourceResolver}
         filterDefinitions={queryState.definitions}
         unifiedFilterValues={queryState.appliedFilterValues}
+        queryResultValues={queryResults.values}
         filterSearchVersion={queryState.filterSearchVersion}
         namespaceSearchVersion={queryState.namespaceSearchVersion}
         builtinNamespaceId={queryState.appliedNamespaceId}
@@ -1432,6 +1449,7 @@ const Screen = forwardRef<ScreenRef, ScreenProps>(({
       handleTopologyLayoutChange,
       handleDismissInspector,
       queryState.appliedFilterValues,
+      queryResults.values,
       queryState.appliedNamespaceId,
       queryState.definitions,
       queryState.filterSearchVersion,
@@ -1481,6 +1499,7 @@ const Screen = forwardRef<ScreenRef, ScreenProps>(({
         handleSelectCanvasItem(null)
       }
       onOpenFilterConfig={() => setFilterConfigOpen(true)}
+      onOpenQueryVariables={() => setQueryVariableOpen(true)}
       onPreview={enterFullscreen}
       onEdit={handleStartEdit}
       onCancel={() => runAfterDataGuard(handleCancelEdit)}
@@ -1566,6 +1585,8 @@ const Screen = forwardRef<ScreenRef, ScreenProps>(({
       builtinNamespaceId={queryState.namespaceDraftId}
       filterDefinitions={queryState.definitions}
       unifiedFilterValues={queryState.filterValues}
+      queryVariables={queryResults.variables}
+      queryResultValues={queryResults.values}
       configSection={activeInspectorTab === "interaction" ? "interaction" : "data"}
       onConfigSectionChange={setInspectorTab}
       onSectionErrorsChange={handleSectionErrorsChange}
@@ -1757,6 +1778,22 @@ const Screen = forwardRef<ScreenRef, ScreenProps>(({
         onCancel={() => setWidgetSelectorOpen(false)}
         onOpenConfig={handleOpenNewWidgetConfig}
         surface="screen"
+      />
+      <QueryResultVariableModal
+        open={queryVariableOpen}
+        variables={queryResults.variables}
+        dataSources={dataSources}
+        filters={queryState.definitions}
+        status={queryResults.status}
+        onCancel={() => setQueryVariableOpen(false)}
+        onConfirm={(next) => {
+          const current = draftViewSetsRef.current;
+          commitDocument({
+            viewSets: { ...current, queryVariables: next },
+            filters: filtersRef.current,
+          });
+          setQueryVariableOpen(false);
+        }}
       />
       <UnifiedFilterConfigModal
         open={filterConfigOpen}

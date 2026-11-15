@@ -34,6 +34,7 @@ interface DashboardToolbarProps {
   onToggleFullscreen: () => void;
   onExportPdf: () => void;
   onOpenFilterConfig: () => void;
+  onOpenQueryVariables?: () => void;
   onOpenAddView: () => void;
   onOpenAddGroup: () => void;
   onToggleEditMode: () => void;
@@ -63,6 +64,7 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
   onToggleFullscreen,
   onExportPdf,
   onOpenFilterConfig,
+  onOpenQueryVariables,
   onOpenAddView,
   onOpenAddGroup,
   onToggleEditMode,
@@ -123,6 +125,18 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
                 className={iconButtonClassName}
               />
             </Tooltip>
+            {onOpenQueryVariables ? (
+              <Tooltip title={t('dashboard.queryResultVariables', '查询结果变量')}>
+                <Button
+                  type="text"
+                  aria-label={t('dashboard.queryResultVariables', '查询结果变量')}
+                  onClick={onOpenQueryVariables}
+                  className={iconButtonClassName}
+                >
+                  {t('dashboard.queryResultShort', '变量')}
+                </Button>
+              </Tooltip>
+            ) : null}
           </PermissionWrapper>
           <Tooltip title={t('dashboard.undoAiApply')}>
             <span className="inline-flex">

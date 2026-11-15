@@ -209,7 +209,7 @@ export interface ScannableFilterDataSource {
     name: string;
     type?: string;
     alias_name?: string;
-    value?: FilterValue | string | number | boolean | Array<string | number> | [number, number] | ConditionFilterValue | null;
+    value?: FilterValue | string | number | boolean | Array<string | number> | [number, number] | ConditionFilterValue | { queryRef: string } | { ref: string } | null;
     filterType?: string;
     inputMode?: string;
     inputConfig?: InputControlConfig | {

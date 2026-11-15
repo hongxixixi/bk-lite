@@ -128,6 +128,7 @@ interface DashboardWidgetCardProps {
   dataSourceResolver: DashboardCanvasProps['dataSourceResolver'];
   appliedFilterValues: Record<string, FilterValue>;
   appliedFilterDefinitions: UnifiedFilterDefinition[];
+  queryResultValues?: Record<string, unknown[]>;
   appliedNamespaceId: number | undefined;
   selectedDashboardLocked?: boolean;
   shareMode: boolean;
@@ -157,6 +158,7 @@ const DashboardWidgetCard = React.memo(function DashboardWidgetCard({
   dataSourceResolver,
   appliedFilterValues,
   appliedFilterDefinitions,
+  queryResultValues,
   appliedNamespaceId,
   selectedDashboardLocked,
   shareMode,
@@ -279,6 +281,7 @@ const DashboardWidgetCard = React.memo(function DashboardWidgetCard({
               dataSource={dataSourceResolver(item.valueConfig?.dataSource)}
               unifiedFilterValues={appliedFilterValues}
               filterDefinitions={appliedFilterDefinitions}
+              queryResultValues={queryResultValues}
               builtinNamespaceId={appliedNamespaceId}
               onRenderStatus={onWidgetRenderStatus}
               onRawData={setExportRawData}
@@ -319,6 +322,7 @@ interface DashboardCanvasProps {
   ) => DatasourceItem | undefined;
   appliedFilterValues: Record<string, FilterValue>;
   appliedFilterDefinitions: UnifiedFilterDefinition[];
+  queryResultValues?: Record<string, unknown[]>;
   appliedNamespaceId: number | undefined;
   selectedDashboardLocked?: boolean;
   shareMode?: boolean;
@@ -364,6 +368,7 @@ const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
   dataSourceResolver,
   appliedFilterValues,
   appliedFilterDefinitions,
+  queryResultValues,
   appliedNamespaceId,
   selectedDashboardLocked,
   shareMode = false,
@@ -1384,6 +1389,7 @@ const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
         dataSourceResolver={dataSourceResolver}
         appliedFilterValues={appliedFilterValues}
         appliedFilterDefinitions={appliedFilterDefinitions}
+        queryResultValues={queryResultValues}
         appliedNamespaceId={appliedNamespaceId}
         selectedDashboardLocked={selectedDashboardLocked}
         shareMode={shareMode}

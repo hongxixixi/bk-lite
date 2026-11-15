@@ -67,6 +67,8 @@ import {
   UnifiedFilterBar,
   UnifiedFilterConfigModal,
 } from '@/app/ops-analysis/components/unifiedFilter';
+import QueryResultVariableModal from '@/app/ops-analysis/components/queryResultVariableModal';
+import { useQueryResultVariables } from '@/app/ops-analysis/hooks/useQueryResultVariables';
 import { collectNamespaceOptions } from '@/app/ops-analysis/utils/namespaceFilter';
 import {
   collectDashboardDataSourceIds,
@@ -285,6 +287,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
     );
     const [filterConfigModalVisible, setFilterConfigModalVisible] =
       useState(false);
+    const [queryVariableOpen, setQueryVariableOpen] = useState(false);
     const [subscriptionModalVisible, setSubscriptionModalVisible] =
       useState(false);
     const [namespaceDraftId, setNamespaceDraftId] = useState<
@@ -299,6 +302,13 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
     const [appliedNamespaceId, setAppliedNamespaceId] = useState<
       number | undefined
     >(undefined);
+    const queryResults = useQueryResultVariables({
+      variables: otherConfig.queryVariables,
+      filterValues: appliedFilterValues,
+      filterDefinitions: appliedFilterDefinitions,
+      findDataSource: dataSourceResolver,
+      reloadToken: dashboardReloadVersion,
+    });
     const [undoStack, setUndoStack] = useState<DashboardUndoEntry[]>([]);
     const [redoStack, setRedoStack] = useState<DashboardUndoEntry[]>([]);
     const [filterSearchVersion, setFilterSearchVersion] = useState(0);
@@ -2136,6 +2146,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
         onToggleFullscreen={handleFullscreenToggle}
         onExportPdf={handleExportPdf}
         onOpenFilterConfig={() => setFilterConfigModalVisible(true)}
+        onOpenQueryVariables={() => setQueryVariableOpen(true)}
         onOpenAddView={() => openAddModal()}
         onOpenAddGroup={handleAddGroup}
         onToggleEditMode={toggleEditMode}
@@ -2219,6 +2230,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
           dataSourceResolver={dataSourceResolver}
           appliedFilterValues={appliedFilterValues}
           appliedFilterDefinitions={appliedFilterDefinitions}
+          queryResultValues={queryResults.values}
           appliedNamespaceId={appliedNamespaceId}
           selectedDashboardLocked={selectedDashboard?.is_build_in}
           csvExportHidden={homepageMode || playbackMode}
@@ -2324,6 +2336,20 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
           dataSourceManager={dataSourceManager}
           filterDefinitions={definitions}
           unifiedFilterValues={filterValues}
+          queryVariables={queryResults.variables}
+          queryResultValues={queryResults.values}
+        />
+        <QueryResultVariableModal
+          open={queryVariableOpen}
+          variables={queryResults.variables}
+          dataSources={dataSourceManager.dataSources}
+          filters={definitions}
+          status={queryResults.status}
+          onCancel={() => setQueryVariableOpen(false)}
+          onConfirm={(next) => {
+            setOtherConfig((current) => ({ ...current, queryVariables: next }));
+            setQueryVariableOpen(false);
+          }}
         />
         <UnifiedFilterConfigModal
           open={filterConfigModalVisible}

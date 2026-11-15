@@ -4321,7 +4321,7 @@
   {
     "key": "监控实例通用查询::monitor/query_monitor_instances",
     "name": "监控实例通用查询",
-    "desc": "按一个监控对象列出实例身份。一行一台，分页总数是这批的台数。IP 用摘要里的资产 IP，没有则用接入 IP。状态是启用或停用。CMDB 标识是实例上保存的值。",
+    "desc": "按一个监控对象列出实例身份。一行一台，分页总数是这批的台数。IP 用摘要里的资产 IP，没有则用接入 IP。状态是启用或停用。CMDB 标识是实例上保存的值。填写 CMDB 实例后只返回这些标识对应的监控实例；不填监控对象时必须填写 CMDB 实例，并在可见实例里查找。",
     "rest_api": "monitor/query_monitor_instances",
     "tag": [
       "monitor"
@@ -4395,6 +4395,22 @@
                 "ref": "monitor_object_id"
               }
             }
+          }
+        }
+      },
+      {
+        "desc": "按 CMDB 实例标识收窄。填写后只返回这些标识对应的监控实例；空列表不返回实例。不填监控对象时必须填写。",
+        "name": "cmdb_ids",
+        "type": "string",
+        "value": [],
+        "alias_name": "CMDB 实例",
+        "filterType": "params",
+        "inputConfig": {
+          "control": "select",
+          "multiple": true,
+          "optionsSource": {
+            "type": "static",
+            "staticItems": []
           }
         }
       },

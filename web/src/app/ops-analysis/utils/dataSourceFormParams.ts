@@ -4,6 +4,7 @@ import type { DateRangeValue } from '@/app/ops-analysis/types/dateRange';
 import type { ConditionFilterValue, ParamItem } from '@/app/ops-analysis/types/dataSource';
 import { parseConditionGroup } from '@/app/ops-analysis/utils/conditionFilter';
 import { formatOpsRequestTime } from '@/app/ops-analysis/utils/dateTime';
+import { isFilterValueRef, isQueryResultRef } from '@/app/ops-analysis/utils/queryResultVariable';
 
 export type DataSourceFormParamValue =
   | string
@@ -14,6 +15,8 @@ export type DataSourceFormParamValue =
   | [number, number]
   | DateRangeValue
   | ConditionFilterValue
+  | { queryRef: string }
+  | { ref: string }
   | null
   | undefined;
 
@@ -111,6 +114,10 @@ export const processDataSourceFormParamsForSubmit = (
     }
     if (value === null) {
       processedParams[param.name] = null;
+      return;
+    }
+    if (isQueryResultRef(value) || isFilterValueRef(value)) {
+      processedParams[param.name] = value;
       return;
     }
     if (param.type === 'date' && value) {

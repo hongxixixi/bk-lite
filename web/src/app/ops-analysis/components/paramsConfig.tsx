@@ -29,6 +29,9 @@ import {
   type ResolvedOptionsQuery,
 } from '@/app/ops-analysis/utils/optionsQueryParamRefs';
 import ConditionFilterControl from '@/app/ops-analysis/components/conditionFilterControl';
+import QueryResultValueControl, {
+  type QueryResultChoice,
+} from '@/app/ops-analysis/components/queryResultValueControl';
 import DateRangeSelector from './dateRangeSelector';
 import {
   getTimeSelectorDefaultValue,
@@ -107,6 +110,8 @@ interface DataSourceParamsConfigProps {
   globalFilterValues?: Record<string, FilterValue>;
   onEditInputConfig?: (param: ParamItem) => void;
   onParamOptionsResolved?: (param: ParamItem, options: InputOption[]) => void;
+  queryResults?: QueryResultChoice[];
+  filterChoices?: QueryResultChoice[];
 }
 
 const formParamValue = (
@@ -179,6 +184,8 @@ const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
   globalFilterValues,
   onEditInputConfig,
   onParamOptionsResolved,
+  queryResults = [],
+  filterChoices = [],
 }) => {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -305,6 +312,8 @@ const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
           resolvedFieldQuery={fieldQuery?.resolution}
           fieldQuerySignature={fieldQuery?.signature}
           disabled={isDisabled}
+          queryResults={queryResults}
+          filters={filterChoices}
         />
       );
     }
@@ -451,7 +460,17 @@ const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
                 { required: param.required, message: t('dataSource.paramRequired', '请配置{label}', { label: labelText }) },
               ]}
           >
-            {renderParamInput(param)}
+            {(queryResults.length > 0 || filterChoices.length > 0)
+              && param.type !== 'conditionFilter'
+              && param.inputConfig?.control !== 'conditionFilter' ? (
+                <QueryResultValueControl
+                  disabled={readonly || param.filterType === 'fixed'}
+                  queryResults={queryResults}
+                  filters={filterChoices}
+                >
+                  {renderParamInput(param)}
+                </QueryResultValueControl>
+              ) : renderParamInput(param)}
           </Form.Item>
         );
       })}

@@ -5,6 +5,8 @@ export interface ScreenDataConfigCompareProps {
   onDirtyChange?: unknown;
   filterDefinitions?: unknown;
   unifiedFilterValues?: unknown;
+  queryVariables?: unknown;
+  queryResultValues?: unknown;
   builtinNamespaceId?: unknown;
   configSection?: unknown;
   onConfigSectionChange?: unknown;
@@ -29,6 +31,8 @@ export const areScreenDataConfigPropsEqual = (
   prev.onDirtyChange === next.onDirtyChange &&
   prev.filterDefinitions === next.filterDefinitions &&
   prev.unifiedFilterValues === next.unifiedFilterValues &&
+  prev.queryVariables === next.queryVariables &&
+  prev.queryResultValues === next.queryResultValues &&
   prev.builtinNamespaceId === next.builtinNamespaceId &&
   prev.configSection === next.configSection &&
   prev.onConfigSectionChange === next.onConfigSectionChange &&

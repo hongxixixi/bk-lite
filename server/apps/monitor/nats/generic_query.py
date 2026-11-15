@@ -130,11 +130,25 @@ def _authorized_instances(user_info, monitor_object_id: str):
 
 @nats_client.register
 @_guard("query_monitor_instances")
+def _instances_for_cmdb_ids(user_info, cmdb_ids: list[str]):
+    """按 CMDB 标识找可见监控实例。资产没接入监控时直接空，不报缺实例。"""
+    if not cmdb_ids:
+        return MonitorInstance.objects.none()
+    candidates = list(MonitorInstance.objects.filter(is_deleted=False, cmdb_id__in=cmdb_ids).values_list("id", flat=True))
+    if not candidates:
+        return MonitorInstance.objects.none()
+    authorized, error = _get_nats_accessible_instance_queryset(user_info or {}, instance_ids=candidates)
+    if error:
+        raise GenericQueryError(error.get("message") or "无权限", status="forbidden")
+    return authorized
+
+
 def query_monitor_instances(
     monitor_object_id=None,
     analysis_mode=None,
     status=None,
     instance_ids=None,
+    cmdb_ids=None,
     group_by=None,
     order_by=None,
     order_dir=None,
@@ -146,12 +160,20 @@ def query_monitor_instances(
     del kwargs
     if group_by not in (None, ""):
         raise GenericQueryError("当前查询不支持分组")
-    queryset = _authorized_instances(user_info, monitor_object_id)
+    selected_cmdb = None if cmdb_ids in (None, "") else _id_list(cmdb_ids)
+    if monitor_object_id in (None, ""):
+        if not selected_cmdb:
+            raise GenericQueryError("监控对象不能为空")
+        queryset = _instances_for_cmdb_ids(user_info, selected_cmdb)
+        selected_cmdb = None
+    else:
+        queryset = _authorized_instances(user_info, monitor_object_id)
     data = query_instances(
         queryset,
         analysis_mode=analysis_mode,
         status=status,
         instance_ids=instance_ids,
+        cmdb_ids=selected_cmdb,
         group_by=group_by,
         order_by=order_by,
         order_dir=order_dir,

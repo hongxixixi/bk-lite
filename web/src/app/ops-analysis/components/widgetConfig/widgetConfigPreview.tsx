@@ -33,6 +33,7 @@ interface WidgetConfigPreviewProps {
   dataSource?: DatasourceItem;
   unifiedFilterValues?: Record<string, FilterValue>;
   filterDefinitions?: UnifiedFilterDefinition[];
+  queryResultValues?: Record<string, unknown[]>;
   builtinNamespaceId?: number;
   surface?: OpsAnalysisWidgetSurface;
   reloadVersion: number;
@@ -66,6 +67,7 @@ const WidgetConfigPreview: React.FC<WidgetConfigPreviewProps> = ({
   dataSource,
   unifiedFilterValues,
   filterDefinitions,
+  queryResultValues,
   builtinNamespaceId,
   surface = 'dashboard',
   reloadVersion,
@@ -270,6 +272,7 @@ const WidgetConfigPreview: React.FC<WidgetConfigPreviewProps> = ({
                             dataSource={dataSource}
                             unifiedFilterValues={unifiedFilterValues}
                             filterDefinitions={filterDefinitions}
+                            queryResultValues={queryResultValues}
                             builtinNamespaceId={builtinNamespaceId}
                             surface={surface}
                             reloadVersion={String(reloadVersion)}

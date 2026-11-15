@@ -76,6 +76,7 @@ interface ScreenCanvasProps {
   screenId?: string | number;
   filterDefinitions?: UnifiedFilterDefinition[];
   unifiedFilterValues?: Record<string, FilterValue>;
+  queryResultValues?: Record<string, unknown[]>;
   filterSearchVersion?: number;
   namespaceSearchVersion?: number;
   builtinNamespaceId?: number;
@@ -491,6 +492,7 @@ interface ScreenCanvasNodeProps {
   screenId?: string | number;
   filterDefinitions?: UnifiedFilterDefinition[];
   unifiedFilterValues?: Record<string, FilterValue>;
+  queryResultValues?: Record<string, unknown[]>;
   filterSearchVersion?: number;
   namespaceSearchVersion?: number;
   builtinNamespaceId?: number;
@@ -523,6 +525,7 @@ const ScreenCanvasNode = React.memo(function ScreenCanvasNode({
   screenId,
   filterDefinitions,
   unifiedFilterValues,
+  queryResultValues,
   filterSearchVersion,
   namespaceSearchVersion,
   builtinNamespaceId,
@@ -563,6 +566,7 @@ const ScreenCanvasNode = React.memo(function ScreenCanvasNode({
       chartThemeMode={chartThemeMode}
       filterDefinitions={filterDefinitions}
       unifiedFilterValues={unifiedFilterValues}
+      queryResultValues={queryResultValues}
       filterSearchVersion={filterSearchVersion}
       namespaceSearchVersion={namespaceSearchVersion}
       builtinNamespaceId={builtinNamespaceId}
@@ -616,6 +620,7 @@ const ScreenCanvas: React.FC<ScreenCanvasProps> = ({
   screenId,
   filterDefinitions,
   unifiedFilterValues,
+  queryResultValues,
   filterSearchVersion = 0,
   namespaceSearchVersion = 0,
   builtinNamespaceId,
@@ -873,6 +878,7 @@ const ScreenCanvas: React.FC<ScreenCanvasProps> = ({
                 screenId={screenId}
                 filterDefinitions={filterDefinitions}
                 unifiedFilterValues={unifiedFilterValues}
+                queryResultValues={queryResultValues}
                 filterSearchVersion={filterSearchVersion}
                 namespaceSearchVersion={namespaceSearchVersion}
                 builtinNamespaceId={builtinNamespaceId}
