@@ -1,21 +1,53 @@
 .portal-canvas.is-editing {
   background-color: var(--color-fill-1);
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--color-border) 55%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 55%, transparent) 1px, transparent 1px);
-  background-size: calc(100% / 12) 16px;
+    linear-gradient(to right, var(--color-border-3) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border-3) 1px, transparent 1px);
+  background-size: calc(100% / 12) 8px;
   border-radius: 8px;
+  outline: 1px solid var(--color-border);
+  outline-offset: 4px;
 }
 
 .portal-canvas > .grid-stack-item > .grid-stack-item-content {
   overflow: hidden;
 }
 
-.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-handle {
-  opacity: 0;
+.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-e,
+.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-s,
+.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-se {
+  display: block;
+  opacity: 1;
+  z-index: 3;
 }
 
-.portal-canvas.is-editing > .grid-stack-item:hover > .ui-resizable-handle,
-.portal-canvas.is-editing > .grid-stack-item:focus-within > .ui-resizable-handle {
-  opacity: 1;
+.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-e {
+  width: 5px;
+  right: 1px;
+  top: 16px;
+  bottom: 16px;
+  cursor: ew-resize;
+  background: var(--color-border-4);
+  border-radius: 3px;
+}
+
+.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-s {
+  height: 5px;
+  bottom: 1px;
+  left: 16px;
+  right: 16px;
+  cursor: ns-resize;
+  background: var(--color-border-4);
+  border-radius: 3px;
+}
+
+.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-se {
+  width: 10px;
+  height: 10px;
+  right: 2px;
+  bottom: 2px;
+  cursor: nwse-resize;
+  background: var(--color-primary);
+  background-image: none;
+  border-radius: 2px;
 }

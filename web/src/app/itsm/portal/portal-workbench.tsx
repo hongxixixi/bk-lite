@@ -47,7 +47,7 @@ function WidgetFrame({ type, editing, extra, onRemove, onFit, children }: {
       <div className="ml-auto flex min-w-0 items-center gap-1">
         {extra}
         {editing && <>
-          <Button type="text" size="small" className="portal-no-drag opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={`按内容调整${name}高度`} onClick={onFit}>适应高度</Button>
+          <Button type="text" size="small" className="portal-no-drag" aria-label={`按内容调整${name}高度`} onClick={onFit}>适应高度</Button>
           <Button type="text" size="small" className="portal-no-drag opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={`移除${name}`} icon={<DeleteOutlined />} onClick={onRemove} />
         </>}
       </div>
@@ -138,6 +138,12 @@ export function PortalWorkbench({ portal, layout, dashboard, draft, search, busy
     </header>
     {editing && settingsOpen && <section aria-label="门户设置" className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
       <div className="flex flex-wrap items-end gap-3">
+        <label className="text-xs text-[var(--color-text-2)]">标题
+          <Input aria-label="设置标题" maxLength={60} className="mt-2 w-56" value={draft?.title} onChange={event => update({ title: event.target.value })} />
+        </label>
+        <label className="text-xs text-[var(--color-text-2)]">欢迎文案
+          <Input aria-label="设置欢迎文案" maxLength={160} className="mt-2 w-72" value={draft?.subtitle} onChange={event => update({ subtitle: event.target.value })} />
+        </label>
         <label className="text-xs text-[var(--color-text-2)]">背景
           <Select aria-label="背景样式" className="mt-2 block w-40" value={LEGACY_BACKGROUNDS.includes(current.background as typeof LEGACY_BACKGROUNDS[number]) ? current.background : (current.background.startsWith('data:image/') ? 'custom' : current.background || '')} options={[...backgroundOptions, ...(current.background.startsWith('data:image/') ? [{ value: 'custom', label: '自定义图片' }] : [])]} onChange={value => update({ background: value === 'custom' ? current.background : value })} />
         </label>

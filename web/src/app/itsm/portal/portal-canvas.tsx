@@ -55,7 +55,8 @@ export function measureWidgetHeight(root: HTMLElement, type: string) {
   const body = root.querySelector<HTMLElement>(`[data-widget="${type}"] .portal-widget-body`);
   const frame = root.querySelector<HTMLElement>(`[data-widget="${type}"] section`);
   if (!body || !frame) return undefined;
-  return heightForContent(body.scrollHeight, frame.offsetHeight - body.clientHeight);
+  const content = body.firstElementChild instanceof HTMLElement ? body.firstElementChild : body;
+  return heightForContent(content.scrollHeight, frame.offsetHeight - body.clientHeight);
 }
 
 export function PortalCanvas({ widgets, editing, onGeometry, children }: {

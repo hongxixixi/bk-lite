@@ -28,12 +28,12 @@ DEFAULT_LAYOUT = {
     "subtitle": "发现所需服务，让每一次协作更高效",
     "background": "",
     "widgets": [
-        {"type": "quick", "x": 0, "y": 0, "w": 8, "h": 24},
-        {"type": "stats", "x": 8, "y": 0, "w": 4, "h": 24},
-        {"type": "services", "x": 0, "y": 24, "w": 8, "h": 44},
-        {"type": "todo", "x": 8, "y": 24, "w": 4, "h": 26},
-        {"type": "announcements", "x": 0, "y": 68, "w": 8, "h": 20},
-        {"type": "tickets", "x": 8, "y": 50, "w": 4, "h": 38},
+        {"type": "quick", "x": 0, "y": 0, "w": 8, "h": 15},
+        {"type": "stats", "x": 8, "y": 0, "w": 4, "h": 16},
+        {"type": "services", "x": 0, "y": 15, "w": 8, "h": 52},
+        {"type": "todo", "x": 8, "y": 16, "w": 4, "h": 23},
+        {"type": "announcements", "x": 0, "y": 67, "w": 8, "h": 20},
+        {"type": "tickets", "x": 8, "y": 39, "w": 4, "h": 23},
     ],
 }
 

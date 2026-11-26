@@ -7,12 +7,15 @@ it('默认模板是主区 8 列、辅区 4 列，且不放个人组件和趋势'
   const [quick, stats, services, todo, announcements, tickets] = DEFAULT_PORTAL_LAYOUT.widgets;
   expect(quick).toMatchObject({ x: 0, w: 8 });
   expect(stats).toMatchObject({ x: 8, w: 4, y: quick.y });
-  expect(services.x).toBe(0);
-  expect(services.w).toBe(8);
-  expect(todo.x).toBe(8);
+  expect(services).toMatchObject({ x: 0, w: 8 });
+  expect(todo).toMatchObject({ x: 8 });
+  expect(quick.h).toBeLessThan(18);
+  expect(announcements.h).toBeLessThanOrEqual(20);
+  expect(services.h).toBeGreaterThan(quick.h + announcements.h);
   expect(announcements.y).toBe(services.y + services.h);
+  expect(todo.y).toBe(stats.y + stats.h);
   expect(tickets.y).toBe(todo.y + todo.h);
-  expect(tickets.y + tickets.h).toBe(announcements.y + announcements.h);
+  expect(tickets.y + tickets.h).not.toBe(announcements.y + announcements.h);
 });
 
 it('旧的半宽整行布局会折成网格，重叠和重复布局无效', () => {
