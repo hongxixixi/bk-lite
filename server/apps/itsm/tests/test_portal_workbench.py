@@ -64,13 +64,18 @@ def test_group_and_domain_and_disabled(service):
 def test_layout_permission_validation_and_roundtrip():
     from apps.itsm.views.portal_workbench import portal_layout
 
-    config = {"title": "团队服务台", "subtitle": "按需申请", "background": "", "widgets": [{"type": "services", "width": 12}, {"type": "todo", "width": 6}]}
+    config = {
+        "title": "团队服务台",
+        "subtitle": "按需申请",
+        "background": "",
+        "widgets": [{"type": "services", "x": 0, "y": 0, "w": 12, "h": 24}, {"type": "todo", "x": 0, "y": 24, "w": 6, "h": 16}],
+    }
     assert portal_layout(req("put", config)).status_code == 403
     manager = req("put", config, permissions=["portal-View", "workflow-Edit"])
     assert data(portal_layout(manager))["title"] == config["title"]
     assert data(portal_layout(req())) == config
     assert data(portal_layout(req(domain="other")))["title"] != config["title"]
-    config["widgets"].append({"type": "script", "width": 12})
+    config["widgets"].append({"type": "script", "x": 0, "y": 40, "w": 12, "h": 8})
     assert portal_layout(req("put", config, permissions=["workflow-Edit"])).status_code == 400
 
 
@@ -116,6 +121,41 @@ def test_reject_unsafe_background(background):
     assert portal_layout(req("put", value, permissions=["workflow-Edit"])).status_code == 400
 
 
+def test_default_portal_layout_keeps_primary_work_and_leaves_personal_widgets_out():
+    from apps.itsm.views.portal_workbench import portal_layout
+
+    result = data(portal_layout(req()))
+    assert result["background"] == ""
+    assert [item["type"] for item in result["widgets"]] == ["quick", "stats", "services", "todo", "announcements", "tickets"]
+    assert result["widgets"][0]["w"] == 8 and result["widgets"][0]["x"] == 0
+    assert result["widgets"][1]["w"] == 4 and result["widgets"][1]["x"] == 8
+    assert {"recents", "favorites", "trend"}.isdisjoint(item["type"] for item in result["widgets"])
+
+
+def test_legacy_width_layout_is_stored_as_geometry_and_gaps_are_allowed():
+    from apps.itsm.views.portal_workbench import portal_layout
+
+    legacy = {
+        "title": "门户",
+        "subtitle": "",
+        "background": "subtle",
+        "widgets": [{"type": "services", "width": 12}, {"type": "todo", "width": 6}, {"type": "announcements", "width": 6}],
+    }
+    saved = data(portal_layout(req("put", legacy, permissions=["workflow-Edit"])))
+    assert saved["background"] == "subtle"
+    assert saved["widgets"][0] == {"type": "services", "x": 0, "y": 0, "w": 12, "h": 24}
+    assert saved["widgets"][1]["x"] == 0 and saved["widgets"][2]["x"] == 6 and saved["widgets"][1]["y"] == saved["widgets"][2]["y"]
+    gapped = {
+        "title": "门户",
+        "subtitle": "",
+        "background": "",
+        "widgets": [{"type": "services", "x": 0, "y": 0, "w": 8, "h": 10}, {"type": "todo", "x": 8, "y": 4, "w": 4, "h": 8}],
+    }
+    assert data(portal_layout(req("put", gapped, permissions=["workflow-Edit"])))["widgets"] == gapped["widgets"]
+    gapped["widgets"][1]["x"] = 6
+    assert portal_layout(req("put", gapped, permissions=["workflow-Edit"])).status_code == 400
+
+
 def test_background_image_roundtrip_and_duplicate_widgets():
     import base64
     import io
@@ -129,7 +169,7 @@ def test_background_image_roundtrip_and_duplicate_widgets():
     background = "data:image/png;base64," + base64.b64encode(content.getvalue()).decode()
     value = {"title": "门户", "subtitle": "", "background": background, "widgets": []}
     assert data(portal_layout(req("put", value, permissions=["workflow-Edit"])))["background"] == background
-    value["widgets"] = [{"type": "services", "width": 6}] * 2
+    value["widgets"] = [{"type": "services", "x": 0, "y": 0, "w": 6, "h": 8}] * 2
     assert portal_layout(req("put", value, permissions=["workflow-Edit"])).status_code == 400
 
 
@@ -226,7 +266,9 @@ def test_directory_search_pages_respect_acl_and_catalog_descendants(service):
     service.description = "Linux"
     service.catalog = child
     service.save()
-    response = data(service_portal(req(payload={"directory": 1, "catalog": parent.pk, "keyword": "linux", "page": 2, "page_size": 10}, user="viewer")))
+    response = data(
+        service_portal(req(payload={"directory": 1, "catalog": parent.pk, "keyword": "linux", "page": 2, "page_size": 10}, user="viewer"))
+    )
     assert response["total"] == 13
     assert len(response["items"]) == 3
     assert data(service_portal(req(payload={"service_id": service.pk})))["services"][0]["id"] == service.pk

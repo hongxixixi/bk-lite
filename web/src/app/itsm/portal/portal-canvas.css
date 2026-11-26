@@ -1,0 +1,21 @@
+.portal-canvas.is-editing {
+  background-color: var(--color-fill-1);
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-border) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 55%, transparent) 1px, transparent 1px);
+  background-size: calc(100% / 12) 16px;
+  border-radius: 8px;
+}
+
+.portal-canvas > .grid-stack-item > .grid-stack-item-content {
+  overflow: hidden;
+}
+
+.portal-canvas.is-editing > .grid-stack-item > .ui-resizable-handle {
+  opacity: 0;
+}
+
+.portal-canvas.is-editing > .grid-stack-item:hover > .ui-resizable-handle,
+.portal-canvas.is-editing > .grid-stack-item:focus-within > .ui-resizable-handle {
+  opacity: 1;
+}

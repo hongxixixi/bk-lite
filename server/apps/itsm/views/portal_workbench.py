@@ -19,25 +19,89 @@ from apps.itsm.services.ticket.listing import personal_group
 from apps.itsm.views.access import api_errors, domain_of, has_permission, method_permission, ticket_scope
 
 WIDGETS = {"stats", "services", "todo", "tickets", "trend", "announcements", "quick", "recents", "favorites"}
+COLUMNS = 12
+MIN_WIDGET_H = 8
+MAX_WIDGET_H = 240
+LEGACY_WIDGET_H = 24
 DEFAULT_LAYOUT = {
     "title": "服务工作台",
     "subtitle": "发现所需服务，让每一次协作更高效",
-    "background": "blue",
+    "background": "",
     "widgets": [
-        {"type": key, "width": width}
-        for key, width in [
-            ("stats", 12),
-            ("services", 12),
-            ("todo", 6),
-            ("announcements", 6),
-            ("trend", 6),
-            ("tickets", 6),
-            ("quick", 12),
-            ("recents", 6),
-            ("favorites", 6),
-        ]
+        {"type": "quick", "x": 0, "y": 0, "w": 8, "h": 24},
+        {"type": "stats", "x": 8, "y": 0, "w": 4, "h": 24},
+        {"type": "services", "x": 0, "y": 24, "w": 8, "h": 44},
+        {"type": "todo", "x": 8, "y": 24, "w": 4, "h": 26},
+        {"type": "announcements", "x": 0, "y": 68, "w": 8, "h": 20},
+        {"type": "tickets", "x": 8, "y": 50, "w": 4, "h": 38},
     ],
 }
+
+
+def _cell(value, low, high):
+    if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
+        raise ValueError("组件配置无效")
+    return value
+
+
+def _overlaps(widgets):
+    for index, item in enumerate(widgets):
+        for other in widgets[index + 1 :]:
+            separated = (
+                item["x"] + item["w"] <= other["x"]
+                or other["x"] + other["w"] <= item["x"]
+                or item["y"] + item["h"] <= other["y"]
+                or other["y"] + other["h"] <= item["y"]
+            )
+            if not separated:
+                return True
+    return False
+
+
+def _pack_legacy(items):
+    placed, x, y, row_h = [], 0, 0, 0
+    for item in items:
+        if x + item["width"] > COLUMNS:
+            y += row_h
+            x, row_h = 0, 0
+        placed.append({"type": item["type"], "x": x, "y": y, "w": item["width"], "h": LEGACY_WIDGET_H})
+        x += item["width"]
+        row_h = max(row_h, LEGACY_WIDGET_H)
+        if x >= COLUMNS:
+            y += row_h
+            x, row_h = 0, 0
+    return placed
+
+
+def _widgets(widgets):
+    if not isinstance(widgets, list) or len(widgets) > len(WIDGETS):
+        raise ValueError("组件数量无效")
+    seen, legacy, modern = set(), [], []
+    for item in widgets:
+        if not isinstance(item, dict) or item.get("type") not in WIDGETS:
+            raise ValueError("组件配置无效")
+        if item["type"] in seen:
+            raise ValueError("组件不能重复")
+        seen.add(item["type"])
+        keys = set(item)
+        if keys == {"type", "width"}:
+            if item["width"] not in (6, 12):
+                raise ValueError("组件配置无效")
+            legacy.append(item)
+            continue
+        if keys != {"type", "x", "y", "w", "h"}:
+            raise ValueError("组件配置无效")
+        x, y = _cell(item["x"], 0, COLUMNS - 1), _cell(item["y"], 0, 5000)
+        w, h = _cell(item["w"], 1, COLUMNS), _cell(item["h"], MIN_WIDGET_H, MAX_WIDGET_H)
+        if x + w > COLUMNS:
+            raise ValueError("组件配置无效")
+        modern.append({"type": item["type"], "x": x, "y": y, "w": w, "h": h})
+    if legacy and modern:
+        raise ValueError("组件配置无效")
+    placed = _pack_legacy(legacy) if legacy else modern
+    if _overlaps(placed):
+        raise ValueError("组件重叠")
+    return placed
 
 
 def validate_layout(value):
@@ -48,18 +112,10 @@ def validate_layout(value):
             raise ValueError("门户配置超出限制")
     if not value["title"].strip():
         raise ValueError("请填写标题")
-    widgets = value["widgets"]
-    if not isinstance(widgets, list) or len(widgets) > len(WIDGETS):
-        raise ValueError("组件数量无效")
-    seen = set()
-    for item in widgets:
-        if not isinstance(item, dict) or set(item) != {"type", "width"} or item["type"] not in WIDGETS or item["width"] not in [6, 12]:
-            raise ValueError("组件配置无效")
-        if item["type"] in seen:
-            raise ValueError("组件不能重复")
-        seen.add(item["type"])
+    widgets = _widgets(value["widgets"])
+    value = {**value, "widgets": widgets}
     background = value["background"]
-    if background not in {"", "blue", "violet", "mint"}:
+    if background not in {"", "subtle", "blue", "violet", "mint"}:
         try:
             header, content = background.split(",", 1)
             if header not in {"data:image/png;base64", "data:image/jpeg;base64", "data:image/webp;base64"}:
@@ -82,7 +138,11 @@ def validate_layout(value):
 def portal_layout(request):
     if request.method == "GET":
         setting = ItsmSetting.objects.filter(domain=domain_of(request), key="portal_layout").first()
-        return WebUtils.response_success(setting.value if setting else DEFAULT_LAYOUT)
+        stored = setting.value if setting else DEFAULT_LAYOUT
+        try:
+            return WebUtils.response_success(validate_layout(stored))
+        except (TypeError, ValueError):
+            return WebUtils.response_success(DEFAULT_LAYOUT)
     if request.method != "PUT":
         return WebUtils.response_error("不支持的请求方法", status_code=405)
     value = validate_layout(json.loads(request.body))
